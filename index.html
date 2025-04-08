@@ -16,7 +16,7 @@
         init: function () {
           const el = this.el;
           setTimeout(() => {
-            el.setAttribute('rotation', '180 0 0');
+            el.setAttribute('rotation', '0 0 0');
             console.log('🔒 Rotation locked in.');
           }, 100);
         }
@@ -47,8 +47,8 @@
             init: function () {
                 const videoEl = this.el;
                 setTimeout(() => {
-                    videoEl.setAttribute('rotation', '0 0 0'); // Use 0 if you want to avoid conflicts
-                    videoEl.setAttribute('position', '0 0 0');
+                    videoEl.setAttribute('rotation', '180 0 0'); // Use 0 if you want to avoid conflicts
+                    videoEl.setAttribute('position', '0 0 0.01');
                     videoEl.setAttribute('width', '1.233'); // Aspect ratio 755:612
                     videoEl.setAttribute('height', '1');
                     console.log('✅ Video orientation fixed.');
