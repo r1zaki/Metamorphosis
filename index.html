@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="utf-8" />
-  <title>AR.js Video Autoplay (Muted Video)</title>
+  <title>AR.js Video on Marker Debug</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
 
   <script src="https://aframe.io/releases/1.7.1/aframe.min.js"></script>
@@ -15,13 +15,18 @@
         const video = document.querySelector("#vid");
 
         marker.addEventListener('markerFound', () => {
+          console.log("Marker found!");
           video.play().catch(err => {
-            console.warn("Autoplay failed:", err);
+            console.warn("Video play error:", err);
           });
+          // Make sure video element is visible
+          video.style.display = "block";
         });
 
         marker.addEventListener('markerLost', () => {
+          console.log("Marker lost!");
           video.pause();
+          video.style.display = "none";
         });
       }
     });
@@ -32,8 +37,9 @@
         setTimeout(() => {
           el.setAttribute('rotation', '-90 0 0');
           el.setAttribute('position', '0 0.05 0');
-          el.setAttribute('width', '1.233');  // 755:612 aspect ratio
+          el.setAttribute('width', '1.233');
           el.setAttribute('height', '1');
+          console.log('Video orientation set');
         }, 100);
       }
     });
@@ -41,6 +47,7 @@
 
   <style>
     html, body { margin: 0; overflow: hidden; height: 100%; }
+    video#vid { display: none; } /* hide native video element */
   </style>
 </head>
 
@@ -48,7 +55,7 @@
   <a-scene
     embedded
     vr-mode-ui="enabled: false"
-    arjs="sourceType: webcam; debugUIEnabled: false;"
+    arjs="sourceType: webcam; debugUIEnabled: true;"  <!-- enabled debug UI for marker -->
   >
     <a-assets>
       <video
@@ -71,10 +78,4 @@
       <a-video
         src="#vid"
         fix-video-orientation
-      ></a-video>
-    </a-marker>
-
-    <a-entity camera></a-entity>
-  </a-scene>
-</body>
-</html>
+      ></a-
