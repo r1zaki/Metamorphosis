@@ -34,11 +34,11 @@
             init: function () {
                 const videoEl = this.el;
                 setTimeout(() => {
-                    videoEl.setAttribute('rotation', '90 0 0'); // Fix the rotation to make the video horizontal
-                    videoEl.setAttribute('position', '0 0 0');  // Adjust position if needed
-                    videoEl.setAttribute('width', '1.233'); // Aspect ratio 755:612
+                    videoEl.setAttribute('rotation', '-90 0 0'); // Flat on marker
+                    videoEl.setAttribute('position', '0 0.05 0');  // Float slightly above
+                    videoEl.setAttribute('width', '1.233'); // Maintain aspect ratio (755:612)
                     videoEl.setAttribute('height', '1');
-                    console.log('✅ Video orientation fixed.');
+                    console.log('✅ Video orientation corrected.');
                 }, 100);
             }
         });
