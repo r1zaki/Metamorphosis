@@ -11,7 +11,7 @@
     <script src="https://raw.githack.com/AR-js-org/studio-backend/master/src/modules/marker/tools/gesture-detector.js"></script>
     <script src="https://raw.githack.com/AR-js-org/studio-backend/master/src/modules/marker/tools/gesture-handler.js"></script>
 
-    <!-- Styles to prevent Android rendering bugs -->
+    <!-- Safe mobile display -->
     <style>
         html, body {
             margin: 0;
@@ -27,35 +27,52 @@
         }
     </style>
 
-    <!-- Custom video handler -->
+    <!-- Video Handler -->
     <script>
         AFRAME.registerComponent('videohandler', {
             init: function () {
-                var marker = this.el;
-                this.vid = document.querySelector("#vid");
+                const marker = this.el;
+                const vid = document.querySelector("#vid");
+
+                // Unlock video on mobile after first interaction
+                const unlock = () => {
+                    vid.play().then(() => {
+                        vid.pause();
+                        console.log("🎬 Video unlocked.");
+                    }).catch(err => {
+                        console.warn("🔒 Video unlock failed:", err);
+                    });
+                    document.body.removeEventListener('click', unlock);
+                };
+                document.body.addEventListener('click', unlock);
 
                 marker.addEventListener('markerFound', () => {
-                    this.vid.play();
+                    vid.play().then(() => {
+                        console.log("▶️ Video playing");
+                    }).catch(err => {
+                        console.warn("❌ Video play failed on markerFound:", err);
+                    });
                 });
 
                 marker.addEventListener('markerLost', () => {
-                    this.vid.pause();
+                    vid.pause();
+                    console.log("⏸️ Video paused");
                 });
             }
         });
     </script>
 
-    <!-- Fix video rotation/position -->
+    <!-- Video Orientation Fix -->
     <script>
         AFRAME.registerComponent('fix-video-orientation', {
             init: function () {
                 const videoEl = this.el;
                 setTimeout(() => {
                     videoEl.setAttribute('rotation', '-90 0 0'); // Flat on marker
-                    videoEl.setAttribute('position', '0 0.05 0');  // Float slightly above
-                    videoEl.setAttribute('width', '1.233'); // Maintain aspect ratio (755:612)
+                    videoEl.setAttribute('position', '0 0.05 0'); // Floating
+                    videoEl.setAttribute('width', '1.233'); // 755:612
                     videoEl.setAttribute('height', '1');
-                    console.log('✅ Video orientation corrected.');
+                    console.log("✅ Video positioned above marker.");
                 }, 100);
             }
         });
@@ -76,11 +93,9 @@
                 src="assets/metamorphosis.mp4"
                 preload="auto"
                 loop
-                crossorigin
-                webkit-playsinline
-                autoplay
                 muted
                 playsinline
+                webkit-playsinline
             ></video>
         </a-assets>
 
