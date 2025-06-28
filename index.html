@@ -2,13 +2,14 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>AR.js Video on Marker</title>
+  <title>AR.js Video on Marker (Fixed)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
 
   <!-- A-Frame and AR.js -->
   <script src="https://aframe.io/releases/1.7.1/aframe.min.js"></script>
   <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
 
+  <!-- Video Play Handler -->
   <script>
     AFRAME.registerComponent('videohandler', {
       init: function () {
@@ -17,8 +18,10 @@
 
         marker.addEventListener('markerFound', () => {
           console.log("✅ Marker found");
-          video.play().catch(err => {
-            console.warn("⚠️ Video play error:", err);
+          video.play().then(() => {
+            console.log("▶️ Video playing");
+          }).catch(err => {
+            console.warn("⚠️ Video play failed:", err);
           });
         });
 
@@ -29,15 +32,16 @@
       }
     });
 
+    // Optional video orientation
     AFRAME.registerComponent('fix-video-orientation', {
       init: function () {
         const el = this.el;
         setTimeout(() => {
-          el.setAttribute('rotation', '-90 0 0');
-          el.setAttribute('position', '0 0.05 0');
-          el.setAttribute('width', '1.233');  // Adjust to your video aspect ratio
+          el.setAttribute('rotation', '-90 0 0');       // Lay flat
+          el.setAttribute('position', '0 0.05 0');       // Float just above marker
+          el.setAttribute('width', '1.233');             // Match aspect ratio (755:612)
           el.setAttribute('height', '1');
-          console.log('📐 Video orientation fixed');
+          console.log("📐 Video orientation set");
         }, 100);
       }
     });
@@ -48,7 +52,7 @@
       margin: 0;
       overflow: hidden;
       height: 100%;
-      background: black;
+      background: #000;
     }
   </style>
 </head>
@@ -59,11 +63,11 @@
     vr-mode-ui="enabled: false"
     arjs="sourceType: webcam; debugUIEnabled: true;"
   >
+    <!-- Assets -->
     <a-assets>
       <video
         id="vid"
         src="assets/metamorphosis.mp4"
-        preload="auto"
         autoplay
         loop
         muted
@@ -73,15 +77,17 @@
       ></video>
     </a-assets>
 
+    <!-- Marker -->
     <a-marker
       type="pattern"
       url="assets/pattern.patt"
       videohandler
     >
-      <a-video
-        src="#vid"
+      <a-entity
+        geometry="primitive: plane"
+        material="shader: flat; src: #vid"
         fix-video-orientation
-      ></a-video>
+      ></a-entity>
     </a-marker>
 
     <a-entity camera></a-entity>
