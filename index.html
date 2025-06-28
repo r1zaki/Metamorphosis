@@ -2,248 +2,94 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>AR.js Video on Marker (Fixed)</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>AR.js Video on Marker</title>
   <!-- A-Frame and AR.js -->
   <script src="https://aframe.io/releases/1.7.1/aframe.min.js"></script>
   <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
-  <!-- Video Play Handler -->
+  
+  <!-- Custom video handler -->
   <script>
     AFRAME.registerComponent('videohandler', {
       init: function () {
-        const marker = this.el;
-        const video = document.querySelector("#vid");
+        var marker = this.el;
+        this.vid = document.querySelector("#vid");
         
-        // Add null check
-        if (!video) {
+        // Add error checking
+        if (!this.vid) {
           console.error("❌ Video element not found!");
           return;
         }
         
-        console.log("📹 Video handler initialized", video);
-        
-        // Wait for video to be ready
-        video.addEventListener('loadeddata', () => {
-          console.log("📼 Video data loaded and ready");
-        });
-        
-        video.addEventListener('error', (e) => {
-          console.error("❌ Video loading error:", e, video.error);
-        });
+        console.log("📹 Video handler initialized");
         
         marker.addEventListener('markerFound', () => {
-          console.log("✅ Marker found");
-          
-          // Ensure video is ready before playing
-          if (video.readyState >= 2) { // HAVE_CURRENT_DATA or higher
-            video.play().then(() => {
-              console.log("▶️ Video playing");
-            }).catch(err => {
-              console.warn("⚠️ Video play failed:", err);
-              // Try to play again after user interaction
-              document.addEventListener('click', () => {
-                video.play().catch(e => console.warn("Still can't play:", e));
-              }, { once: true });
-            });
-          } else {
-            console.warn("⚠️ Video not ready, waiting...");
-            video.addEventListener('loadeddata', () => {
-              video.play().catch(err => console.warn("⚠️ Delayed play failed:", err));
-            }, { once: true });
-          }
+          console.log("✅ Marker found - playing video");
+          this.vid.play().catch(err => {
+            console.warn("⚠️ Video play failed:", err);
+          });
         });
         
         marker.addEventListener('markerLost', () => {
-          console.log("❌ Marker lost");
-          video.pause();
+          console.log("❌ Marker lost - pausing video");
+          this.vid.pause();
         });
-      }
-    });
-    
-    // Fixed video orientation component with better stability
-    AFRAME.registerComponent('fix-video-orientation', {
-      init: function () {
-        const el = this.el;
-        
-        // Apply settings with better positioning for stability
-        el.setAttribute('rotation', '-90 0 0');       // Lay flat
-        el.setAttribute('position', '0 0.01 0');      // Very close to marker surface
-        el.setAttribute('scale', '1.2 1 1');          // Slightly larger for better visibility
-        el.setAttribute('width', '1.233');            // Match aspect ratio (755:612)
-        el.setAttribute('height', '1');
-        
-        console.log("📐 Video orientation set with stability improvements");
-        
-        // Debug the plane setup
-        console.log("🔧 Plane attributes:", {
-          rotation: el.getAttribute('rotation'),
-          position: el.getAttribute('position'),
-          scale: el.getAttribute('scale'),
-          width: el.getAttribute('width'),
-          height: el.getAttribute('height')
-        });
-      }
-    });
-    
-    // Add scene initialization debugging
-    document.addEventListener('DOMContentLoaded', () => {
-      console.log("🚀 DOM Content Loaded");
-      
-      const video = document.querySelector("#vid");
-      if (video) {
-        console.log("📹 Video element found:", video.src);
-        
-        // Check if video source is accessible
-        video.addEventListener('loadstart', () => console.log("📼 Video loading started"));
-        video.addEventListener('canplay', () => console.log("✅ Video ready to play"));
-        video.addEventListener('error', (e) => {
-          console.error("❌ Video error details:", {
-            error: video.error,
-            networkState: video.networkState,
-            readyState: video.readyState,
-            src: video.src
-          });
-        });
-      } else {
-        console.error("❌ Video element not found in DOM");
       }
     });
   </script>
-  <style>
-    html, body {
-      margin: 0;
-      padding: 0;
-      overflow: hidden;
-      height: 100vh;
-      width: 100vw;
-      background: transparent;
-      font-family: Arial, sans-serif;
-    }
-    
-    /* Ensure AR scene shows camera feed */
-    a-scene {
-      background: transparent !important;
-    }
-    
-    /* Make sure video canvas is transparent */
-    canvas {
-      background: transparent !important;
-    }
-    
-    /* Add debug overlay */
-    #debug-info {
-      position: absolute;
-      top: 10px;
-      left: 10px;
-      background: rgba(0,0,0,0.8);
-      color: white;
-      padding: 10px;
-      font-family: monospace;
-      font-size: 12px;
-      z-index: 1000;
-      border-radius: 4px;
-      max-width: 300px;
-    }
-    
-    #debug-info div {
-      margin: 2px 0;
-    }
-  </style>
+  
+  <!-- Fix video rotation/position -->
+  <script>
+    AFRAME.registerComponent('fix-video-orientation', {
+      init: function () {
+        const videoEl = this.el;
+        setTimeout(() => {
+          videoEl.setAttribute('rotation', '-90 0 0'); // Flat on marker
+          videoEl.setAttribute('position', '0 0.05 0'); // Float slightly above
+          videoEl.setAttribute('width', '1.233'); // Maintain aspect ratio (755:612)
+          videoEl.setAttribute('height', '1');
+          console.log('✅ Video orientation corrected.');
+        }, 100);
+      }
+    });
+  </script>
 </head>
-<body>
-  <!-- Debug information panel -->
-  <div id="debug-info">
-    <div>🔍 AR.js Debug Panel</div>
-    <div id="video-status">📹 Video: Loading...</div>
-    <div id="marker-status">🎯 Marker: Searching...</div>
-    <div id="camera-status">📷 Camera: Initializing...</div>
-  </div>
 
-  <a-scene
-    embedded
-    vr-mode-ui="enabled: false"
-    arjs="sourceType: webcam; debugUIEnabled: false; trackingMethod: best; sourceWidth: 1280; sourceHeight: 960; displayWidth: 1280; displayHeight: 960;"
-    renderer="antialias: true; alpha: true; precision: mediump;"
-    background="transparent: true;"
+<body style="margin: 0; overflow: hidden;">
+  <a-scene 
+    vr-mode-ui="enabled: false" 
+    embedded 
+    arjs="sourceType: webcam; debugUIEnabled: true;"
   >
     <!-- Assets -->
     <a-assets>
-      <video
-        id="vid"
-        src="assets/metamorphosis.mp4"
-        preload="auto"
-        loop
-        muted
+      <video 
+        id="vid" 
+        src="assets/metamorphosis.mp4" 
+        preload="auto" 
+        loop 
+        crossorigin 
+        webkit-playsinline 
+        muted 
         playsinline
-        webkit-playsinline
-        crossorigin="anonymous"
       ></video>
     </a-assets>
-    <!-- Marker with improved tracking -->
-    <a-marker
-      type="pattern"
-      url="assets/pattern.patt"
+    
+    <!-- Marker -->
+    <a-marker 
+      type="pattern" 
+      preset="custom" 
+      url="assets/pattern.patt" 
       videohandler
-      smooth="true"
-      smoothCount="10"
-      smoothTolerance="0.01"
-      smoothThreshold="5"
-      raycaster="objects: .raycastable"
-      emitevents="true"
+      id="markerA"
     >
-      <a-entity
-        geometry="primitive: plane"
-        material="shader: flat; src: #vid; transparent: true; alphaTest: 0.1; side: double"
+      <a-video 
+        src="#vid" 
         fix-video-orientation
-        class="raycastable"
-      ></a-entity>
+      ></a-video>
     </a-marker>
+    
+    <!-- Camera -->
     <a-entity camera></a-entity>
   </a-scene>
-  
-  <script>
-    // Additional debugging after scene loads
-    window.addEventListener('load', () => {
-      const videoStatus = document.getElementById('video-status');
-      const markerStatus = document.getElementById('marker-status');
-      const cameraStatus = document.getElementById('camera-status');
-      
-      const video = document.querySelector('#vid');
-      const marker = document.querySelector('a-marker');
-      
-      // Update video status
-      if (video) {
-        video.addEventListener('loadeddata', () => {
-          videoStatus.textContent = '📹 Video: Ready ✅';
-        });
-        video.addEventListener('error', () => {
-          videoStatus.textContent = '📹 Video: Error ❌';
-        });
-        video.addEventListener('play', () => {
-          videoStatus.textContent = '📹 Video: Playing ▶️';
-        });
-        video.addEventListener('pause', () => {
-          videoStatus.textContent = '📹 Video: Paused ⏸️';
-        });
-      }
-      
-      // Update marker status
-      if (marker) {
-        marker.addEventListener('markerFound', () => {
-          markerStatus.textContent = '🎯 Marker: Found ✅';
-        });
-        marker.addEventListener('markerLost', () => {
-          markerStatus.textContent = '🎯 Marker: Lost ❌';
-        });
-      }
-      
-      // Camera status
-      setTimeout(() => {
-        cameraStatus.textContent = '📷 Camera: Active ✅';
-      }, 2000);
-      
-      console.log("🎬 All systems initialized");
-    });
-  </script>
 </body>
 </html>
