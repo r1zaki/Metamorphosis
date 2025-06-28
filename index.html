@@ -13,6 +13,7 @@
       init: function () {
         var marker = this.el;
         this.vid = document.querySelector("#vid");
+        this.userHasInteracted = false;
         
         // Add error checking
         if (!this.vid) {
@@ -22,10 +23,37 @@
         
         console.log("📹 Video handler initialized");
         
+        // Handle user interaction to enable video playback
+        const enableVideoPlayback = () => {
+          if (!this.userHasInteracted) {
+            this.userHasInteracted = true;
+            this.vid.muted = true; // Ensure it's muted
+            this.vid.play().then(() => {
+              this.vid.pause(); // Pause immediately after enabling
+              console.log("🔓 Video playback enabled");
+            }).catch(err => {
+              console.warn("⚠️ Failed to enable video:", err);
+            });
+          }
+        };
+        
+        // Add click listener to enable video
+        document.addEventListener('click', enableVideoPlayback, { once: true });
+        document.addEventListener('touchstart', enableVideoPlayback, { once: true });
+        
         marker.addEventListener('markerFound', () => {
           console.log("✅ Marker found - playing video");
-          this.vid.play().catch(err => {
+          
+          // Ensure video is muted and try to play
+          this.vid.muted = true;
+          this.vid.currentTime = 0; // Start from beginning
+          
+          this.vid.play().then(() => {
+            console.log("▶️ Video playing successfully");
+          }).catch(err => {
             console.warn("⚠️ Video play failed:", err);
+            // Show instruction to user
+            this.showPlayInstruction();
           });
         });
         
@@ -33,6 +61,32 @@
           console.log("❌ Marker lost - pausing video");
           this.vid.pause();
         });
+      },
+      
+      showPlayInstruction: function() {
+        // Create instruction overlay
+        const instruction = document.createElement('div');
+        instruction.id = 'play-instruction';
+        instruction.innerHTML = `
+          <div style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); 
+                      background: rgba(0,0,0,0.8); color: white; padding: 20px; 
+                      border-radius: 10px; text-align: center; z-index: 1000;">
+            <h3>📱 Tap to Enable Video</h3>
+            <p>Tap anywhere on the screen to enable video playback</p>
+            <button onclick="this.parentElement.parentElement.remove()" 
+                    style="background: #4CAF50; color: white; border: none; 
+                           padding: 10px 20px; border-radius: 5px; cursor: pointer;">
+              Got it!
+            </button>
+          </div>
+        `;
+        document.body.appendChild(instruction);
+        
+        // Remove after 5 seconds
+        setTimeout(() => {
+          const el = document.getElementById('play-instruction');
+          if (el) el.remove();
+        }, 5000);
       }
     });
   </script>
@@ -55,6 +109,20 @@
 </head>
 
 <body style="margin: 0; overflow: hidden;">
+  <!-- Instruction overlay for first time users -->
+  <div id="initial-instruction" style="position: fixed; top: 20px; left: 20px; right: 20px; 
+                                      background: rgba(0,0,0,0.8); color: white; padding: 15px; 
+                                      border-radius: 10px; text-align: center; z-index: 1000;">
+    <h4>📱 AR Video Player</h4>
+    <p>1. Tap anywhere to enable video playback<br>
+       2. Point camera at your marker<br>
+       3. Video will play automatically when marker is detected</p>
+    <button onclick="this.parentElement.remove()" 
+            style="background: #4CAF50; color: white; border: none; 
+                   padding: 8px 16px; border-radius: 5px; cursor: pointer; margin-top: 10px;">
+      Start AR Experience
+    </button>
+  </div>
   <a-scene 
     vr-mode-ui="enabled: false" 
     embedded 
@@ -69,8 +137,9 @@
         loop 
         crossorigin 
         webkit-playsinline 
-        muted 
+        muted
         playsinline
+        style="display: none;"
       ></video>
     </a-assets>
     
