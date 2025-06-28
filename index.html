@@ -2,95 +2,235 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>AR.js Video on Marker (Fixed)</title>
+  <title>AR.js Video on Marker (Troubleshooted)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
-
-  <!-- A-Frame and AR.js -->
-  <script src="https://aframe.io/releases/1.7.1/aframe.min.js"></script>
-  <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
-
-  <!-- Video Play Handler -->
+  <!-- A-Frame and AR.js - Using stable versions -->
+  <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.4.5/aframe/build/aframe-ar.min.js"></script>
+  
   <script>
+    // Video handler component
     AFRAME.registerComponent('videohandler', {
       init: function () {
         const marker = this.el;
         const video = document.querySelector("#vid");
-
-        marker.addEventListener('markerFound', () => {
-          console.log("✅ Marker found");
-          video.play().then(() => {
-            console.log("▶️ Video playing");
-          }).catch(err => {
-            console.warn("⚠️ Video play failed:", err);
-          });
+        
+        // Debug logging
+        console.log("📹 Video element:", video);
+        console.log("🎯 Marker element:", marker);
+        
+        // Ensure video is loaded before trying to play
+        video.addEventListener('loadeddata', () => {
+          console.log("📼 Video loaded and ready");
         });
-
+        
+        video.addEventListener('error', (e) => {
+          console.error("❌ Video error:", e);
+        });
+        
+        marker.addEventListener('markerFound', () => {
+          console.log("✅ Marker found - attempting to play video");
+          
+          // Multiple attempts to ensure video plays
+          const playVideo = () => {
+            if (video.paused) {
+              video.play().then(() => {
+                console.log("▶️ Video playing successfully");
+              }).catch(err => {
+                console.warn("⚠️ Video play failed:", err);
+                // Try again after a short delay
+                setTimeout(playVideo, 100);
+              });
+            }
+          };
+          
+          playVideo();
+        });
+        
         marker.addEventListener('markerLost', () => {
-          console.log("❌ Marker lost");
+          console.log("❌ Marker lost - pausing video");
           video.pause();
         });
       }
     });
-
-    // Optional video orientation
-    AFRAME.registerComponent('fix-video-orientation', {
+    
+    // Video orientation component
+    AFRAME.registerComponent('video-plane', {
       init: function () {
         const el = this.el;
-        setTimeout(() => {
-          el.setAttribute('rotation', '-90 0 0');       // Lay flat
-          el.setAttribute('position', '0 0.05 0');       // Float just above marker
-          el.setAttribute('width', '1.233');             // Match aspect ratio (755:612)
-          el.setAttribute('height', '1');
-          console.log("📐 Video orientation set");
-        }, 100);
+        
+        // Set initial properties
+        el.setAttribute('geometry', {
+          primitive: 'plane',
+          width: 2,
+          height: 1.5
+        });
+        
+        el.setAttribute('material', {
+          shader: 'flat',
+          src: '#vid',
+          transparent: true,
+          alphaTest: 0.1
+        });
+        
+        el.setAttribute('position', '0 0 0');
+        el.setAttribute('rotation', '-90 0 0'); // Lay flat on marker
+        
+        console.log("📐 Video plane configured");
+      }
+    });
+    
+    // Initialize AR scene
+    document.addEventListener('DOMContentLoaded', () => {
+      console.log("🚀 DOM loaded, initializing AR...");
+      
+      // Check if video source exists (for debugging)
+      const video = document.querySelector("#vid");
+      if (video) {
+        video.addEventListener('canplay', () => {
+          console.log("✅ Video can start playing");
+        });
       }
     });
   </script>
-
+  
   <style>
     html, body {
       margin: 0;
+      padding: 0;
       overflow: hidden;
-      height: 100%;
+      height: 100vh;
+      width: 100vw;
       background: #000;
+      font-family: Arial, sans-serif;
+    }
+    
+    /* Loading indicator */
+    #loading {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: white;
+      z-index: 1000;
+      text-align: center;
+    }
+    
+    /* Debug info */
+    #debug {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background: rgba(0,0,0,0.7);
+      color: white;
+      padding: 10px;
+      font-size: 12px;
+      z-index: 999;
+      border-radius: 5px;
     }
   </style>
 </head>
-
 <body>
+  <div id="loading">
+    <div>Loading AR Camera...</div>
+    <div style="font-size: 12px; margin-top: 10px;">
+      Point camera at marker to see video
+    </div>
+  </div>
+  
+  <div id="debug">
+    <div>AR.js Video Debug</div>
+    <div id="status">Initializing...</div>
+  </div>
+  
   <a-scene
     embedded
     vr-mode-ui="enabled: false"
-    arjs="sourceType: webcam; debugUIEnabled: true;"
+    arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3;"
+    renderer="logarithmicDepthBuffer: true; precision: medium;"
+    loading-screen="enabled: false"
   >
     <!-- Assets -->
     <a-assets>
       <video
         id="vid"
-        src="assets/metamorphosis.mp4"
-        autoplay
-        loop
-        muted
+        preload="auto"
+        autoplay="false"
+        loop="true"
+        muted="true"
         playsinline
         webkit-playsinline
         crossorigin="anonymous"
-      ></video>
+        style="display: none;"
+      >
+        <!-- Fallback video sources -->
+        <source src="assets/metamorphosis.mp4" type="video/mp4">
+        <source src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" type="video/mp4">
+        Your browser does not support the video tag.
+      </video>
     </a-assets>
-
+    
     <!-- Marker -->
     <a-marker
       type="pattern"
       url="assets/pattern.patt"
       videohandler
+      raycaster="objects: .clickable"
+      emitevents="true"
+      cursor="fuse: false; rayOrigin: mouse;"
     >
       <a-entity
-        geometry="primitive: plane"
-        material="shader: flat; src: #vid"
-        fix-video-orientation
+        video-plane
+        class="clickable"
       ></a-entity>
     </a-marker>
-
+    
+    <!-- Camera -->
     <a-entity camera></a-entity>
   </a-scene>
+  
+  <script>
+    // Additional debugging and initialization
+    window.addEventListener('load', () => {
+      const loading = document.getElementById('loading');
+      const status = document.getElementById('status');
+      
+      setTimeout(() => {
+        loading.style.display = 'none';
+        status.textContent = 'AR Ready - Point at marker';
+      }, 2000);
+      
+      // Check for common issues
+      const video = document.querySelector('#vid');
+      const marker = document.querySelector('a-marker');
+      
+      if (!video) {
+        console.error('❌ Video element not found');
+        status.textContent = 'Error: Video not found';
+      }
+      
+      if (!marker) {
+        console.error('❌ Marker element not found');
+        status.textContent = 'Error: Marker not found';
+      }
+      
+      // Listen for AR.js events
+      marker.addEventListener('markerFound', () => {
+        status.textContent = 'Marker detected!';
+      });
+      
+      marker.addEventListener('markerLost', () => {
+        status.textContent = 'Marker lost - searching...';
+      });
+      
+      // Video debugging
+      video.addEventListener('loadstart', () => console.log('📼 Video load started'));
+      video.addEventListener('loadedmetadata', () => console.log('📼 Video metadata loaded'));
+      video.addEventListener('canplay', () => console.log('📼 Video ready to play'));
+      video.addEventListener('play', () => console.log('▶️ Video started playing'));
+      video.addEventListener('pause', () => console.log('⏸️ Video paused'));
+      video.addEventListener('ended', () => console.log('🔚 Video ended'));
+    });
+  </script>
 </body>
 </html>
