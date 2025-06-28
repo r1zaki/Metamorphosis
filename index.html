@@ -60,22 +60,25 @@
       }
     });
     
-    // Fixed video orientation component
+    // Fixed video orientation component with better stability
     AFRAME.registerComponent('fix-video-orientation', {
       init: function () {
         const el = this.el;
         
-        // Apply settings immediately, no setTimeout needed
+        // Apply settings with better positioning for stability
         el.setAttribute('rotation', '-90 0 0');       // Lay flat
-        el.setAttribute('position', '0 0.05 0');       // Float just above marker
-        el.setAttribute('width', '1.233');             // Match aspect ratio (755:612)
+        el.setAttribute('position', '0 0.01 0');      // Very close to marker surface
+        el.setAttribute('scale', '1.2 1 1');          // Slightly larger for better visibility
+        el.setAttribute('width', '1.233');            // Match aspect ratio (755:612)
         el.setAttribute('height', '1');
-        console.log("📐 Video orientation set");
+        
+        console.log("📐 Video orientation set with stability improvements");
         
         // Debug the plane setup
         console.log("🔧 Plane attributes:", {
           rotation: el.getAttribute('rotation'),
           position: el.getAttribute('position'),
+          scale: el.getAttribute('scale'),
           width: el.getAttribute('width'),
           height: el.getAttribute('height')
         });
@@ -109,9 +112,22 @@
   <style>
     html, body {
       margin: 0;
+      padding: 0;
       overflow: hidden;
-      height: 100%;
-      background: #000;
+      height: 100vh;
+      width: 100vw;
+      background: transparent;
+      font-family: Arial, sans-serif;
+    }
+    
+    /* Ensure AR scene shows camera feed */
+    a-scene {
+      background: transparent !important;
+    }
+    
+    /* Make sure video canvas is transparent */
+    canvas {
+      background: transparent !important;
     }
     
     /* Add debug overlay */
@@ -146,7 +162,9 @@
   <a-scene
     embedded
     vr-mode-ui="enabled: false"
-    arjs="sourceType: webcam; debugUIEnabled: true;"
+    arjs="sourceType: webcam; debugUIEnabled: false; trackingMethod: best; sourceWidth: 1280; sourceHeight: 960; displayWidth: 1280; displayHeight: 960;"
+    renderer="antialias: true; alpha: true; precision: mediump;"
+    background="transparent: true;"
   >
     <!-- Assets -->
     <a-assets>
@@ -161,16 +179,23 @@
         crossorigin="anonymous"
       ></video>
     </a-assets>
-    <!-- Marker -->
+    <!-- Marker with improved tracking -->
     <a-marker
       type="pattern"
       url="assets/pattern.patt"
       videohandler
+      smooth="true"
+      smoothCount="10"
+      smoothTolerance="0.01"
+      smoothThreshold="5"
+      raycaster="objects: .raycastable"
+      emitevents="true"
     >
       <a-entity
         geometry="primitive: plane"
-        material="shader: flat; src: #vid; transparent: true"
+        material="shader: flat; src: #vid; transparent: true; alphaTest: 0.1; side: double"
         fix-video-orientation
+        class="raycastable"
       ></a-entity>
     </a-marker>
     <a-entity camera></a-entity>
