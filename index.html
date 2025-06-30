@@ -1,507 +1,84 @@
 <!DOCTYPE html>
 <html>
-<head>
-    <meta charset="utf-8">
-    <title>AR Video on Marker - Network Safe</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0, minimum-scale=1.0">
-    
+  <head>
+    <meta charset="utf-8" />
+    <title>MindAR Video Autoplay</title>
+    <script src="https://cdn.jsdelivr.net/npm/aframe@1.2.0/dist/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.1.4/dist/aframe/mindar-image-aframe.prod.js"></script>
     <style>
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-            overflow: hidden;
-        }
-        
-        #arjsDebugUIContainer {
-            display: none;
-        }
-        
-        /* Start overlay */
-        #startOverlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.9);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 9999;
-            color: white;
-            text-align: center;
-            flex-direction: column;
-            touch-action: manipulation;
-        }
-        
-        #startButton {
-            background: #4CAF50;
-            color: white;
-            border: none;
-            padding: 20px 40px;
-            font-size: 20px;
-            border-radius: 8px;
-            cursor: pointer;
-            margin-top: 20px;
-            touch-action: manipulation;
-        }
-        
-        #startButton:hover, #startButton:active {
-            background: #45a049;
-        }
-        
-        /* Status display */
-        #statusDisplay {
-            position: fixed;
-            top: 10px;
-            left: 10px;
-            background: rgba(0, 0, 0, 0.8);
-            color: white;
-            padding: 15px;
-            border-radius: 8px;
-            font-size: 14px;
-            max-width: 350px;
-            z-index: 1000;
-            max-height: 400px;
-            overflow-y: auto;
-        }
-        
-        .status-item {
-            margin: 5px 0;
-            padding: 5px;
-            border-radius: 4px;
-        }
-        
-        .status-success {
-            background: rgba(76, 175, 80, 0.3);
-            border-left: 3px solid #4CAF50;
-        }
-        
-        .status-error {
-            background: rgba(244, 67, 54, 0.3);
-            border-left: 3px solid #f44336;
-        }
-        
-        .status-warning {
-            background: rgba(255, 193, 7, 0.3);
-            border-left: 3px solid #FFC107;
-        }
-        
-        .status-info {
-            background: rgba(33, 150, 243, 0.3);
-            border-left: 3px solid #2196F3;
-        }
-        
-        #toggleStatus {
-            position: fixed;
-            top: 10px;
-            right: 10px;
-            background: #2196F3;
-            color: white;
-            border: none;
-            padding: 10px 15px;
-            border-radius: 5px;
-            z-index: 1001;
-            font-size: 12px;
-        }
-        
-        /* Fallback message */
-        #fallbackMessage {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(0, 0, 0, 0.9);
-            color: white;
-            padding: 30px;
-            border-radius: 10px;
-            text-align: center;
-            z-index: 10000;
-            max-width: 400px;
-            display: none;
-        }
+      body { margin: 0; overflow: hidden; }
+      #status {
+        position: absolute;
+        top: 0;
+        left: 0;
+        padding: 8px 12px;
+        background: rgba(0, 0, 0, 0.6);
+        color: #fff;
+        font-family: monospace;
+        font-size: 14px;
+        z-index: 9999;
+      }
+      #status.success { background: green; }
+      #status.error { background: red; }
+      #status.warning { background: orange; }
+      #status.info { background: blue; }
     </style>
-</head>
-
-<body>
-    <!-- Start overlay -->
-    <div id="startOverlay">
-        <div>
-            <h2>📱 AR Video Player</h2>
-            <p>Enhanced Network Safety Version</p>
-            <p><small>⚠️ Requires HTTPS and camera access</small></p>
-            <button id="startButton">Start AR Experience</button>
-        </div>
-    </div>
-    
-    <!-- Status toggle -->
-    <button id="toggleStatus">Status</button>
-    
-    <!-- Status display -->
-    <div id="statusDisplay" style="display: none;">
-        <h4>🔧 AR Status Monitor</h4>
-        <div id="statusContent">
-            <div class="status-item status-info">Initializing...</div>
-        </div>
-    </div>
-    
-    <!-- Fallback message -->
-    <div id="fallbackMessage">
-        <h3>⚠️ Network Issues Detected</h3>
-        <p>Unable to load required AR libraries from CDN sources.</p>
-        <p><strong>Solutions:</strong></p>
-        <ul style="text-align: left;">
-            <li>Check internet connection</li>
-            <li>Try different network (WiFi/Mobile data)</li>
-            <li>Disable VPN if active</li>
-            <li>Try different browser</li>
-            <li>Contact site administrator for local hosting</li>
-        </ul>
-        <button onclick="location.reload()" style="background: #4CAF50; color: white; border: none; padding: 10px 20px; border-radius: 5px; margin-top: 15px;">
-            Retry
-        </button>
-    </div>
-
-    <!-- AR Scene - will be populated after scripts load -->
-    <div id="arContainer"></div>
+  </head>
+  <body>
+    <div id="status">🔄 Waiting for marker...</div>
 
     <script>
-        // Global variables
-        let statusVisible = false;
-        let hasStarted = false;
-        let scriptsLoaded = false;
-        
-        // Status logging
-        function addStatus(message, type = 'info') {
-            const statusContent = document.getElementById('statusContent');
-            const timestamp = new Date().toLocaleTimeString();
-            const statusItem = document.createElement('div');
-            statusItem.className = `status-item status-${type}`;
-            statusItem.innerHTML = `[${timestamp}] ${message}`;
-            statusContent.insertBefore(statusItem, statusContent.firstChild);
-            
-            // Keep only last 20 messages
-            const items = statusContent.children;
-            if (items.length > 20) {
-                statusContent.removeChild(items[items.length - 1]);
-            }
-            
-            console.log(`[${type.toUpperCase()}] ${message}`);
-        }
-        
-        // Toggle status display
-        function toggleStatus() {
-            const statusDisplay = document.getElementById('statusDisplay');
-            statusVisible = !statusVisible;
-            statusDisplay.style.display = statusVisible ? 'block' : 'none';
-        }
-        
-        // Script loading with comprehensive fallbacks
-        function loadScript(urls, callback) {
-            let currentIndex = 0;
-            
-            function tryLoad() {
-                if (currentIndex >= urls.length) {
-                    addStatus('All CDN sources failed', 'error');
-                    callback(false);
-                    return;
-                }
-                
-                const script = document.createElement('script');
-                script.src = urls[currentIndex];
-                script.timeout = 15000; // 15 second timeout
-                
-                const timeout = setTimeout(() => {
-                    addStatus(`Timeout loading from: ${urls[currentIndex]}`, 'warning');
-                    script.onerror();
-                }, 15000);
-                
-                script.onload = () => {
-                    clearTimeout(timeout);
-                    addStatus(`✅ Loaded: ${urls[currentIndex]}`, 'success');
-                    callback(true);
-                };
-                
-                script.onerror = () => {
-                    clearTimeout(timeout);
-                    addStatus(`❌ Failed: ${urls[currentIndex]}`, 'error');
-                    currentIndex++;
-                    document.head.removeChild(script);
-                    tryLoad();
-                };
-                
-                addStatus(`Trying: ${urls[currentIndex]}`, 'info');
-                document.head.appendChild(script);
-            }
-            
-            tryLoad();
-        }
-
-        // Enhanced A-Frame CDN sources
-        const aframeSources = [
-            'https://aframe.io/releases/1.4.0/aframe.min.js',
-            'https://cdn.jsdelivr.net/npm/aframe@1.4.0/dist/aframe.min.js',
-            'https://unpkg.com/aframe@1.4.0/dist/aframe.min.js',
-            'https://cdnjs.cloudflare.com/ajax/libs/aframe/1.4.0/aframe.min.js',
-            // Try older versions as fallback
-            'https://aframe.io/releases/1.3.0/aframe.min.js',
-            'https://cdn.jsdelivr.net/npm/aframe@1.3.0/dist/aframe.min.js'
-        ];
-
-        // Enhanced AR.js CDN sources
-        const arjsSources = [
-            'https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.4.5/aframe/build/aframe-ar.min.js',
-            'https://unpkg.com/@ar-js-org/ar.js@3.4.5/aframe/build/aframe-ar.min.js',
-            'https://cdn.jsdelivr.net/npm/@ar-js-org/ar.js@3.4.5/aframe/build/aframe-ar.min.js',
-            // Try older versions
-            'https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.4.0/aframe/build/aframe-ar.min.js',
-            'https://unpkg.com/@ar-js-org/ar.js@3.4.0/aframe/build/aframe-ar.min.js'
-        ];
-
-        // Initialize AR Scene after scripts load
-        function createARScene() {
-            const arContainer = document.getElementById('arContainer');
-            arContainer.innerHTML = `
-                <a-scene
-                    vr-mode-ui="enabled: false"
-                    renderer="logarithmicDepthBuffer: true; precision: medium;"
-                    embedded
-                    arjs="trackingMethod: best; sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3;"
-                    gesture-detector
-                    id="scene"
-                >
-                    <a-assets>
-                        <video
-                            id="vid"
-                            preload="metadata"
-                            loop
-                            crossorigin="anonymous"
-                            webkit-playsinline="true"
-                            playsinline="true"
-                            muted="true"
-                            controls="false"
-                            style="display: none;"
-                        >
-                            <source src="assets/metamorphosis.mp4" type="video/mp4">
-                            <source src="assets/metamorphosis.webm" type="video/webm">
-                        </video>
-                    </a-assets>
-
-                    <a-marker
-                        type="pattern"
-                        preset="custom"
-                        url="assets/pattern.patt"
-                        videohandler
-                        smooth="true"
-                        smoothCount="10"
-                        smoothTolerance="0.01"
-                        smoothThreshold="5"
-                        id="markerA"
-                    >
-                        <a-plane
-                            src="#vid"
-                            width="1.5"
-                            height="1.2"
-                            rotation="-90 0 0"
-                            position="0 0.01 0"
-                            material="transparent: true; alphaTest: 0.5;"
-                        ></a-plane>
-                    </a-marker>
-
-                    <a-entity camera></a-entity>
-                </a-scene>
-            `;
-            
-            addStatus('✅ AR Scene created', 'success');
-        }
-        
-        // Register A-Frame components
-        function registerComponents() {
-            if (typeof AFRAME === 'undefined' || !AFRAME.registerComponent) {
-                addStatus('❌ AFRAME not properly loaded', 'error');
-                return false;
-            }
-            
-            // Register video handler component
-            AFRAME.registerComponent('videohandler', {
-                init: function() {
-                    const marker = this.el;
-                    const video = document.querySelector('#vid');
-                    let isPlaying = false;
-                    
-                    if (!video) {
-                        addStatus('❌ Video element not found', 'error');
-                        return;
-                    }
-
-                    marker.addEventListener('markerFound', function() {
-                        addStatus('🎯 Marker detected', 'success');
-                        
-                        if (!isPlaying) {
-                            playVideoSafely(video).then(() => {
-                                isPlaying = true;
-                                addStatus('▶️ Video playing', 'success');
-                            }).catch(err => {
-                                addStatus('❌ Video play failed: ' + err.message, 'error');
-                            });
-                        }
-                    });
-
-                    marker.addEventListener('markerLost', function() {
-                        addStatus('🎯 Marker lost', 'warning');
-                        
-                        if (isPlaying) {
-                            video.pause();
-                            isPlaying = false;
-                            addStatus('⏸️ Video paused', 'info');
-                        }
-                    });
-                }
-            });
-            
-            addStatus('✅ Components registered', 'success');
-            return true;
-        }
-        
-        // Safe video play function
-        async function playVideoSafely(video) {
-            const attempts = [
-                () => video.play(),
-                () => {
-                    video.muted = true;
-                    return video.play();
-                },
-                () => {
-                    video.load();
-                    video.muted = true;
-                    return video.play();
-                }
-            ];
-
-            for (let i = 0; i < attempts.length; i++) {
-                try {
-                    await attempts[i]();
-                    return;
-                } catch (err) {
-                    if (i === attempts.length - 1) {
-                        throw err;
-                    }
-                }
-            }
-        }
-        
-        // Start AR experience
-        async function startAR() {
-            if (hasStarted) return;
-            hasStarted = true;
-            
-            if (!scriptsLoaded) {
-                addStatus('❌ Scripts not loaded yet', 'error');
-                return;
-            }
-            
-            const overlay = document.getElementById('startOverlay');
-            overlay.style.display = 'none';
-            
-            addStatus('🚀 Starting AR experience...', 'info');
-            
-            try {
-                const video = document.querySelector('#vid');
-                if (video) {
-                    addStatus('🎬 Initializing video...', 'info');
-                    video.muted = true;
-                    video.load();
-                    
-                    // Try to unlock video
-                    try {
-                        await video.play();
-                        video.pause();
-                        addStatus('✅ Video unlocked', 'success');
-                    } catch (err) {
-                        addStatus('⚠️ Video unlock failed: ' + err.message, 'warning');
-                    }
-                }
-                
-                // Wait for scene to load
-                const scene = document.querySelector('a-scene');
-                if (scene) {
-                    scene.addEventListener('loaded', () => {
-                        addStatus('✅ AR scene ready', 'success');
-                    });
-                }
-                
-            } catch (error) {
-                addStatus('❌ Startup error: ' + error.message, 'error');
-            }
-        }
-        
-        // Initialize everything
-        function initialize() {
-            addStatus('🔧 Initializing AR Video Player...', 'info');
-            
-            // Check device compatibility
-            const userAgent = navigator.userAgent;
-            const isAndroid = /Android/i.test(userAgent);
-            const androidVersion = isAndroid ? userAgent.match(/Android (\d+)/)?.[1] : 'N/A';
-            const isHTTPS = location.protocol === 'https:';
-            const hasCamera = navigator.mediaDevices && navigator.mediaDevices.getUserMedia;
-            
-            addStatus(`📱 Android: ${isAndroid ? 'Yes (v' + androidVersion + ')' : 'No'}`, 'info');
-            addStatus(`🔒 HTTPS: ${isHTTPS ? 'Yes' : 'No'}`, isHTTPS ? 'success' : 'error');
-            addStatus(`📷 Camera: ${hasCamera ? 'Available' : 'Not available'}`, hasCamera ? 'success' : 'error');
-            
-            if (!isHTTPS) {
-                addStatus('⚠️ HTTPS required for camera access', 'warning');
-            }
-            
-            // Load scripts
-            addStatus('📥 Loading A-Frame...', 'info');
-            loadScript(aframeSources, (aframeLoaded) => {
-                if (!aframeLoaded) {
-                    addStatus('❌ Failed to load A-Frame from all sources', 'error');
-                    document.getElementById('fallbackMessage').style.display = 'block';
-                    return;
-                }
-                
-                addStatus('📥 Loading AR.js...', 'info');
-                loadScript(arjsSources, (arjsLoaded) => {
-                    if (!arjsLoaded) {
-                        addStatus('❌ Failed to load AR.js from all sources', 'error');
-                        document.getElementById('fallbackMessage').style.display = 'block';
-                        return;
-                    }
-                    
-                    // Wait a moment for scripts to initialize
-                    setTimeout(() => {
-                        if (registerComponents()) {
-                            createARScene();
-                            scriptsLoaded = true;
-                            addStatus('✅ AR system ready!', 'success');
-                        } else {
-                            addStatus('❌ Component registration failed', 'error');
-                        }
-                    }, 1000);
-                });
-            });
-        }
-        
-        // Event listeners
-        document.addEventListener('DOMContentLoaded', () => {
-            document.getElementById('startButton').addEventListener('click', startAR);
-            document.getElementById('toggleStatus').addEventListener('click', toggleStatus);
-            
-            // Initialize
-            initialize();
-        });
-        
-        // Global error handling
-        window.addEventListener('error', (e) => {
-            addStatus('❌ Error: ' + (e.error?.message || e.message || 'Unknown error'), 'error');
-        });
-        
-        window.addEventListener('unhandledrejection', (e) => {
-            addStatus('❌ Promise rejection: ' + (e.reason?.message || 'Unknown'), 'error');
-        });
+      function addStatus(message, type = '') {
+        const status = document.getElementById('status');
+        status.textContent = message;
+        status.className = '';
+        if (type) status.classList.add(type);
+      }
     </script>
-</body>
+
+    <a-scene mindar-image="imageTargetSrc: target.mind; autoStart: true;" 
+             vr-mode-ui="enabled: false" 
+             device-orientation-permission-ui="enabled: true">
+      
+      <a-assets>
+        <video id="vid" src="video.mp4" preload="auto" loop="true" muted playsinline></video>
+      </a-assets>
+
+      <a-entity mindar-image-target="targetIndex: 0" videohandler>
+        <a-video 
+          src="#vid" 
+          width="1" 
+          height="0.56" 
+          position="0 0 0" 
+          rotation="0 0 0">
+        </a-video>
+      </a-entity>
+
+      <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+    </a-scene>
+
+    <script>
+      AFRAME.registerComponent('videohandler', {
+        init: function () {
+          const marker = this.el;
+          const video = document.querySelector('#vid');
+
+          if (!video) {
+            addStatus('❌ Video element not found', 'error');
+            return;
+          }
+
+          marker.addEventListener('markerFound', function () {
+            addStatus('🎯 Marker detected', 'success');
+            video.muted = true;
+            video.play().then(() => {
+              addStatus('▶️ Video autoplayed', 'success');
+            }).catch(err => {
+              addStatus('❌ Autoplay error: ' + err.message, 'error');
+            });
+          });
+        }
+      });
+    </script>
+  </body>
 </html>
