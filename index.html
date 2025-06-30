@@ -2,69 +2,53 @@
 <html>
   <head>
     <meta charset="utf-8" />
-    <title>AR.js Video Marker</title>
+    <title>MindAR Video AR</title>
     <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.4.5/aframe/build/aframe-ar.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.4/dist/mindar-image-aframe.prod.js"></script>
     <style>
-      body {
-        margin: 0;
-        overflow: hidden;
-      }
+      body, html { margin: 0; padding: 0; overflow: hidden; }
+      video { display: none; }
     </style>
   </head>
   <body>
     <a-scene
+      mindar-image="imageTargetSrc: assets/targets.mind; autoStart: true;"
       embedded
-      arjs="trackingMethod: best; sourceType: webcam; debugUIEnabled: false;"
-      renderer="logarithmicDepthBuffer: true;"
+      color-space="sRGB"
+      renderer="colorManagement: true, physicallyCorrectLights"
     >
       <a-assets>
         <video
-          id="vid"
+          id="video"
           src="assets/metamorphosis.mp4"
-          loop
           preload="auto"
+          loop
           playsinline
-          webkit-playsinline
           crossorigin="anonymous"
         ></video>
       </a-assets>
 
-      <a-marker
-        type="pattern"
-        preset="custom"
-        url="assets/pattern.patt"
-        id="marker"
-      >
-        <a-plane
-          src="#vid"
-          width="1.5"
-          height="1.2"
-          rotation="-90 0 0"
-          position="0 0.01 0"
-          material="shader: flat;"
-        ></a-plane>
-      </a-marker>
+      <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-      <a-entity camera></a-entity>
+      <a-entity mindar-image-target="targetIndex: 0">
+        <a-video
+          src="#video"
+          width="1.5"
+          height="0.84"
+          position="0 0 0"
+          rotation="0 0 0"
+        ></a-video>
+      </a-entity>
     </a-scene>
 
     <script>
-      AFRAME.registerComponent('autoplay-video', {
-        init: function () {
-          const marker = document.querySelector('#marker');
-          const video = document.querySelector('#vid');
+      document.addEventListener("DOMContentLoaded", () => {
+        const video = document.querySelector("#video");
+        const target = document.querySelector("[mindar-image-target]");
 
-          marker.addEventListener('markerFound', () => {
-            video.play().catch((e) =>
-              console.warn('Autoplay failed:', e.message)
-            );
-          });
-        }
-      });
-
-      document.querySelector('a-scene').addEventListener('loaded', () => {
-        document.querySelector('[a-marker]').setAttribute('autoplay-video', '');
+        target.addEventListener("targetFound", () => {
+          video.play().catch(e => console.warn("Autoplay blocked:", e));
+        });
       });
     </script>
   </body>
