@@ -2,82 +2,69 @@
 <html>
   <head>
     <meta charset="utf-8" />
-    <title>MindAR Video Autoplay</title>
-    <script src="https://cdn.jsdelivr.net/npm/aframe@1.2.0/dist/aframe.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.1.4/dist/aframe/mindar-image-aframe.prod.js"></script>
+    <title>AR.js Video Marker</title>
+    <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.4.5/aframe/build/aframe-ar.min.js"></script>
     <style>
-      body { margin: 0; overflow: hidden; }
-      #status {
-        position: absolute;
-        top: 0;
-        left: 0;
-        padding: 8px 12px;
-        background: rgba(0, 0, 0, 0.6);
-        color: #fff;
-        font-family: monospace;
-        font-size: 14px;
-        z-index: 9999;
+      body {
+        margin: 0;
+        overflow: hidden;
       }
-      #status.success { background: green; }
-      #status.error { background: red; }
-      #status.warning { background: orange; }
-      #status.info { background: blue; }
     </style>
   </head>
   <body>
-    <div id="status">🔄 Waiting for marker...</div>
-
-    <script>
-      function addStatus(message, type = '') {
-        const status = document.getElementById('status');
-        status.textContent = message;
-        status.className = '';
-        if (type) status.classList.add(type);
-      }
-    </script>
-
-    <a-scene mindar-image="imageTargetSrc: target.mind; autoStart: true;" 
-             vr-mode-ui="enabled: false" 
-             device-orientation-permission-ui="enabled: true">
-      
+    <a-scene
+      embedded
+      arjs="trackingMethod: best; sourceType: webcam; debugUIEnabled: false;"
+      renderer="logarithmicDepthBuffer: true;"
+    >
       <a-assets>
-        <video id="vid" src="video.mp4" preload="auto" loop="true" muted playsinline></video>
+        <video
+          id="vid"
+          src="assets/metamorphosis.mp4"
+          loop
+          preload="auto"
+          playsinline
+          webkit-playsinline
+          crossorigin="anonymous"
+        ></video>
       </a-assets>
 
-      <a-entity mindar-image-target="targetIndex: 0" videohandler>
-        <a-video 
-          src="#vid" 
-          width="1" 
-          height="0.56" 
-          position="0 0 0" 
-          rotation="0 0 0">
-        </a-video>
-      </a-entity>
+      <a-marker
+        type="pattern"
+        preset="custom"
+        url="assets/pattern.patt"
+        id="marker"
+      >
+        <a-plane
+          src="#vid"
+          width="1.5"
+          height="1.2"
+          rotation="-90 0 0"
+          position="0 0.01 0"
+          material="shader: flat;"
+        ></a-plane>
+      </a-marker>
 
-      <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+      <a-entity camera></a-entity>
     </a-scene>
 
     <script>
-      AFRAME.registerComponent('videohandler', {
+      AFRAME.registerComponent('autoplay-video', {
         init: function () {
-          const marker = this.el;
+          const marker = document.querySelector('#marker');
           const video = document.querySelector('#vid');
 
-          if (!video) {
-            addStatus('❌ Video element not found', 'error');
-            return;
-          }
-
-          marker.addEventListener('markerFound', function () {
-            addStatus('🎯 Marker detected', 'success');
-            video.muted = true;
-            video.play().then(() => {
-              addStatus('▶️ Video autoplayed', 'success');
-            }).catch(err => {
-              addStatus('❌ Autoplay error: ' + err.message, 'error');
-            });
+          marker.addEventListener('markerFound', () => {
+            video.play().catch((e) =>
+              console.warn('Autoplay failed:', e.message)
+            );
           });
         }
+      });
+
+      document.querySelector('a-scene').addEventListener('loaded', () => {
+        document.querySelector('[a-marker]').setAttribute('autoplay-video', '');
       });
     </script>
   </body>
