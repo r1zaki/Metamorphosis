@@ -51,68 +51,46 @@
 </head>
 
 <body>
-  <button id="start-btn">Start AR</button>
-  <div id="error"></div>
-  <div id="status">Ready to start AR.js</div>
+  <div id="status">Loading AR...</div>
 
   <a-scene embedded
-    arjs="sourceType: webcam; debugUIEnabled: true; detectionMode: mono_and_matrix; matrixCodeType: 3x3; patternRatio: 0.75;"
+    arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3; patternRatio: 0.75;"
     vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: true" style="display: none;">
     <a-assets>
       <video id="video" src="assets/metamorphosis.mp4" loop muted playsinline webkit-playsinline></video>
     </a-assets>
-    <a-marker type="pattern" url="assets/pattern.patt" smooth="true" smoothCount="80" smoothTolerance="0.15"
-      smoothThreshold="30">
-      <a-video src="#video" width="1" height="0.8106" position="0 0 0" rotation="-90 0 0"
+    <a-marker type="pattern" url="assets/pattern.patt" smooth="true" smoothCount="80" smoothTolerance="0.15" smoothThreshold="40">
+      <a-video src="#video" width="1" height="0.5625" position="0 0 0" rotation="-90 0 0"
         autoplay loop muted playsinline webkit-playsinline></a-video>
     </a-marker>
     <a-entity camera></a-entity>
   </a-scene>
 
   <script>
-    const startBtn = document.getElementById('start-btn');
-    const errorDiv = document.getElementById('error');
     const statusDiv = document.getElementById('status');
     const scene = document.querySelector('a-scene');
     const video = document.getElementById('video');
 
-    startBtn.onclick = () => {
-      try {
-        statusDiv.textContent = 'Starting AR.js...';
-        scene.style.display = 'block';
-        startBtn.style.display = 'none';
-        statusDiv.style.display = 'none';
+    // Automatically start AR when page loads
+    window.addEventListener('DOMContentLoaded', () => {
+      statusDiv.textContent = 'Starting AR...';
+      scene.style.display = 'block';
+      statusDiv.style.display = 'none';
 
-        // Play video when marker is found
-        const marker = scene.querySelector('a-marker');
-        marker.addEventListener('markerFound', () => {
-          video.play().catch(e => {
-            errorDiv.textContent = 'Video play failed: ' + e.message;
-          });
-        });
-        marker.addEventListener('markerLost', () => {
-          video.pause();
-        });
-
-      } catch (e) {
-        errorDiv.textContent = 'Start failed: ' + e.message;
-        statusDiv.textContent = 'Error starting AR';
-      }
-    };
-
-    // Error handling
-    window.addEventListener('error', (e) => {
-      errorDiv.textContent = 'Error: ' + e.message;
+      // Play video when marker is found
+      const marker = scene.querySelector('a-marker');
+      marker.addEventListener('markerFound', () => {
+        video.play();
+      });
+      // Optionally, keep the markerLost event if you want to pause video when marker is lost:
+      // marker.addEventListener('markerLost', () => {
+      //   video.pause();
+      // });
     });
 
-    // Video load error handling
-    video.addEventListener('error', (e) => {
-      errorDiv.textContent = 'Video load error: ' + e.message;
-    });
-
-    // Check if video loads
+    // Show status when video is loaded
     video.addEventListener('loadeddata', () => {
-      statusDiv.textContent = 'Video loaded successfully. Ready to start AR.js';
+      statusDiv.textContent = '';
     });
   </script>
 </body>
