@@ -1,54 +1,120 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <meta charset="utf-8" />
-    <title>MindAR Video Example</title>
-    <script src="https://cdn.jsdelivr.net/npm/aframe@1.4.2/dist/aframe.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.1.4/dist/mindar-image-aframe.prod.js"></script>
-    <style>
-      body, html { margin: 0; padding: 0; overflow: hidden; width: 100%; height: 100%; }
-      video { display: none; }
-    </style>
-  </head>
-  <body>
-    <video id="video" src="metamorphosis.mp4" preload="auto" loop playsinline muted></video>
 
-    <a-scene mindar-image="imageTargetSrc: targets.mind; autoStart: true;" 
-             embedded color-space="sRGB" renderer="precision: mediump;" 
-             vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: true">
+<head>
+  <meta charset="UTF-8">
+  <title>AR Video Overlay - AR.js</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- A-Frame first -->
+  <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
+  <!-- AR.js official CDN -->
+  <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+    }
 
-      <a-assets>
-        <video id="vid" src="metamorphosis.mp4" preload="auto" loop crossorigin="anonymous"></video>
-      </a-assets>
+    #start-btn {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 1000;
+      padding: 15px 30px;
+      font-size: 18px;
+      background: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+    }
 
-      <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+    #error {
+      position: fixed;
+      top: 60px;
+      left: 10px;
+      color: red;
+      z-index: 1000;
+    }
 
-      <a-entity mindar-image-target="targetIndex: 0">
-        <a-video 
-          src="#vid" 
-          width="1" height="0.5625" 
-          position="0 0 0" 
-          rotation="0 0 0"
-          autoplay
-          loop>
-        </a-video>
-      </a-entity>
-    </a-scene>
+    #status {
+      position: fixed;
+      top: 90px;
+      left: 10px;
+      color: blue;
+      z-index: 1000;
+    }
+  </style>
+</head>
 
-    <script>
-      const video = document.querySelector("#vid");
+<body>
+  <button id="start-btn">Start AR</button>
+  <div id="error"></div>
+  <div id="status">Ready to start AR.js</div>
 
-      document.querySelector("a-scene").addEventListener("arReady", () => {
-        console.log("MindAR is ready");
-      });
+  <a-scene embedded
+    arjs="sourceType: webcam; debugUIEnabled: true; detectionMode: mono_and_matrix; matrixCodeType: 3x3; patternRatio: 0.75;"
+    vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: true" style="display: none;">
+    <a-assets>
+      <video id="video" src="assets/metamorphosis.mp4" loop muted playsinline webkit-playsinline></video>
+    </a-assets>
+    <a-marker type="pattern" url="assets/pattern.patt" smooth="true" smoothCount="40" smoothTolerance="0.01"
+      smoothThreshold="20">
+      <a-video src="#video" width="1" height="1" position="0 0 0" rotation="-90 0 0"
+        autoplay loop muted playsinline webkit-playsinline></a-video>
+    </a-marker>
+    <a-entity camera></a-entity>
+  </a-scene>
 
-      document.querySelector("a-scene").addEventListener("targetFound", () => {
-        video.play();
-      });
+  <script>
+    const startBtn = document.getElementById('start-btn');
+    const errorDiv = document.getElementById('error');
+    const statusDiv = document.getElementById('status');
+    const scene = document.querySelector('a-scene');
+    const video = document.getElementById('video');
 
-      document.querySelector("a-scene").addEventListener("targetLost", () => {
-        video.pause();
-      });
-    </script>
-  </body>
+    startBtn.onclick = () => {
+      try {
+        statusDiv.textContent = 'Starting AR.js...';
+        scene.style.display = 'block';
+        startBtn.style.display = 'none';
+        statusDiv.style.display = 'none';
+
+        // Play video when marker is found
+        const marker = scene.querySelector('a-marker');
+        marker.addEventListener('markerFound', () => {
+          video.play().catch(e => {
+            errorDiv.textContent = 'Video play failed: ' + e.message;
+          });
+        });
+        marker.addEventListener('markerLost', () => {
+          video.pause();
+        });
+
+      } catch (e) {
+        errorDiv.textContent = 'Start failed: ' + e.message;
+        statusDiv.textContent = 'Error starting AR';
+      }
+    };
+
+    // Error handling
+    window.addEventListener('error', (e) => {
+      errorDiv.textContent = 'Error: ' + e.message;
+    });
+
+    // Video load error handling
+    video.addEventListener('error', (e) => {
+      errorDiv.textContent = 'Video load error: ' + e.message;
+    });
+
+    // Check if video loads
+    video.addEventListener('loadeddata', () => {
+      statusDiv.textContent = 'Video loaded successfully. Ready to start AR.js';
+    });
+  </script>
+</body>
+
 </html>
