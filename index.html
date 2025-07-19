@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>AR.js Video on Marker</title>
+  <title>AR.js Video on Custom Marker</title>
   <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
   <script src="https://cdn.rawgit.com/jeromeetienne/ar.js/2.2.1/aframe/build/aframe-ar.min.js"></script>
   <style>body { margin: 0; overflow: hidden; }</style>
@@ -12,8 +12,8 @@
       <video id="video" src="./assets/metamorphosis.mp4" preload="auto" crossorigin="anonymous" webkit-playsinline playsinline muted></video>
     </a-assets>
 
-    <!-- Hiro marker -->
-    <a-marker preset="hiro">
+    <!-- Custom marker -->
+    <a-marker type="pattern" url="./assets/patternmetamorphosis.patt">
       <a-video 
         src="#video" 
         width="1" 
