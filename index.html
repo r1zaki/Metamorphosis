@@ -4,34 +4,58 @@
   <title>AR.js Video on Custom Marker</title>
   <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
   <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.4.5/aframe/build/aframe-ar.min.js"></script>
-  <style>body { margin: 0; overflow: hidden; }</style>
+  <style>
+    body { 
+      margin: 0; 
+      overflow: hidden; 
+      font-family: monospace;
+    }
+    
+    /* Fix for Android camera orientation */
+    #arjsDebugUIContainer {
+      position: fixed;
+      bottom: 10px;
+      left: 10px;
+      z-index: 1000;
+    }
+    
+    /* Ensure proper viewport on mobile */
+    canvas {
+      display: block;
+      width: 100vw !important;
+      height: 100vh !important;
+    }
+  </style>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 </head>
 <body style="margin:0; overflow:hidden;">
   <a-scene 
     embedded 
-    arjs="sourceType: webcam; debugUIEnabled: true; detectionMode: mono; trackingMethod: best; markersAreaEnabled: true;"
+    arjs="sourceType: webcam; debugUIEnabled: true; detectionMode: mono; trackingMethod: best; markersAreaEnabled: true; cameraParametersUrl: https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.4.5/data/data/camera_para.dat;"
     vr-mode-ui="enabled: false;"
-    renderer="logarithmicDepthBuffer: true;"
+    renderer="logarithmicDepthBuffer: true; antialias: true; alpha: true;"
     arjs-hit-testing="true">
     
     <a-assets>
-      <!-- Your local video -->
+      <!-- Your local video with Android optimizations -->
       <video 
         id="video" 
         src="./assets/metamorphosis.mp4" 
         preload="auto" 
         crossorigin="anonymous" 
-        webkit-playsinline 
-        playsinline 
-        muted 
-        loop>
+        webkit-playsinline="true"
+        playsinline="true" 
+        muted="true"
+        loop="true"
+        controls="false"
+        autoplay="false">
       </video>
     </a-assets>
 
     <!-- Your custom marker with better configuration -->
     <a-marker 
       type="pattern" 
-      url="./assets/patternmeta.patt"
+      url="./assets/patternmetamorphosis.patt"
       markerhandler
       smooth="true"
       smoothCount="10"
@@ -61,7 +85,7 @@
       </a-box>
     </a-marker>
 
-    <a-entity camera></a-entity>
+    <a-entity camera look-controls-enabled="false" wasd-controls-enabled="false"></a-entity>
   </a-scene>
 
   <script>
@@ -69,6 +93,28 @@
     window.addEventListener('load', () => {
       const video = document.getElementById('video');
       const markers = document.querySelectorAll('a-marker');
+      
+      // Android-specific camera fixes
+      const isAndroid = /Android/i.test(navigator.userAgent);
+      if (isAndroid) {
+        console.log('Android device detected, applying fixes...');
+        
+        // Force camera constraints for Android
+        const scene = document.querySelector('a-scene');
+        if (scene) {
+          scene.setAttribute('arjs', 
+            'sourceType: webcam; ' +
+            'debugUIEnabled: true; ' +
+            'detectionMode: mono; ' +
+            'trackingMethod: best; ' +
+            'markersAreaEnabled: true; ' +
+            'sourceWidth: 1280; ' +
+            'sourceHeight: 960; ' +
+            'displayWidth: 1280; ' +
+            'displayHeight: 960;'
+          );
+        }
+      }
       
       // Add error handling for video
       video.addEventListener('error', (e) => {
@@ -80,7 +126,7 @@
       });
 
       // Check if pattern file loads
-      fetch('./assets/patternmeta.patt')
+      fetch('./assets/patternmetamorphosis.patt')
         .then(response => {
           if (response.ok) {
             console.log('Pattern file loaded successfully');
@@ -109,14 +155,27 @@
         });
       });
 
-      // Add camera permission check
-      navigator.mediaDevices.getUserMedia({ video: true })
+      // Enhanced camera permission check for Android
+      navigator.mediaDevices.getUserMedia({ 
+        video: { 
+          facingMode: 'environment',  // Use back camera
+          width: { ideal: 1280 },
+          height: { ideal: 960 }
+        } 
+      })
         .then(stream => {
           console.log('Camera access granted');
           stream.getTracks().forEach(track => track.stop()); // Stop the test stream
         })
         .catch(err => {
           console.error('Camera access denied:', err);
+          // Try with less restrictive constraints
+          navigator.mediaDevices.getUserMedia({ video: true })
+            .then(stream => {
+              console.log('Camera access granted with basic constraints');
+              stream.getTracks().forEach(track => track.stop());
+            })
+            .catch(e => console.error('Camera access completely denied:', e));
         });
     });
   </script>
