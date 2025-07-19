@@ -37,15 +37,16 @@
       console.log('Video started playing');
     });
 
-    startButton.addEventListener('click', async () => {
+    startButton.addEventListener('click', () => {
       startButton.style.display = 'none';
       sceneEl.setAttribute('visible', 'true');
-      await sceneEl.components['mindar-image'].start();
 
-      try {
-        await video.play();
-      } catch (err) {
-        console.error('Video play error:', err);
+      if (sceneEl.components['mindar-image']) {
+        sceneEl.components['mindar-image'].start();
+      } else {
+        sceneEl.addEventListener('renderstart', () => {
+          sceneEl.components['mindar-image'].start();
+        });
       }
 
       if (typeof AudioContext !== 'undefined') {
