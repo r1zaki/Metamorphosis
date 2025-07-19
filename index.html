@@ -9,7 +9,10 @@
 <body style="margin:0; overflow:hidden;">
   <a-scene 
     embedded 
-    arjs="sourceType: webcam; debugUIEnabled: true; detectionMode: mono_and_matrix; matrixCodeType: 3x3;">
+    arjs="sourceType: webcam; debugUIEnabled: true; detectionMode: mono; trackingMethod: best; markersAreaEnabled: true;"
+    vr-mode-ui="enabled: false;"
+    renderer="logarithmicDepthBuffer: true;"
+    arjs-hit-testing="true">
     
     <a-assets>
       <!-- Your local video -->
@@ -25,8 +28,15 @@
       </video>
     </a-assets>
 
-    <!-- Your custom marker -->
-    <a-marker type="pattern" url="./assets/patternmetamorphosis.patt">
+    <!-- Your custom marker with better configuration -->
+    <a-marker 
+      type="pattern" 
+      url="./assets/patternmetamorphosis.patt"
+      markerhandler
+      smooth="true"
+      smoothCount="10"
+      smoothTolerance=".01"
+      smoothThreshold="5">
       <a-video 
         src="#video" 
         width="2" 
@@ -43,7 +53,13 @@
     </a-marker>
 
     <!-- Fallback Hiro marker for testing -->
-    <a-marker preset="hiro">
+    <a-marker 
+      preset="hiro"
+      markerhandler
+      smooth="true"
+      smoothCount="10"
+      smoothTolerance=".01"
+      smoothThreshold="5">
       <a-box 
         position="0 0.5 0" 
         material="color: blue;" 
