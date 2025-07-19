@@ -1,16 +1,97 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>Camera Test</title>
-    <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
+    <title>MindAR - Metamorphosis Video</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <script src="https://cdn.jsdelivr.net/npm/aframe@1.2.0/dist/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.1.4/dist/aframe/mindar-aframe.prod.js"></script>
+    <style>
+      body { margin: 0; overflow: hidden; }
+      #startButton {
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        z-index: 999;
+        padding: 10px 20px;
+        font-size: 16px;
+        background-color: #007bff;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+    </style>
   </head>
   <body>
-    <a-scene mindar-image="imageTargetSrc: ./assets/target.mind;" embedded>
+    <!-- User tap required for autoplay (especially on iOS) -->
+    <button id="startButton">Start AR</button>
+
+    <a-scene
+      mindar-image="imageTargetSrc: ./assets/target.mind;"
+      embedded
+      color-space="sRGB"
+      renderer="colorManagement: true, physicallyCorrectLights"
+      vr-mode-ui="enabled: false"
+      device-orientation-permission-ui="enabled: true"
+      visible="false"
+    >
+      <a-assets>
+        <video
+          id="video"
+          src="./assets/metamorphosis.mp4"
+          preload="auto"
+          crossorigin="anonymous"
+          webkit-playsinline
+          playsinline
+          muted
+        ></video>
+      </a-assets>
+
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+
       <a-entity mindar-image-target="targetIndex: 0">
-        <a-plane color="blue" width="1" height="1"></a-plane>
+        <a-video
+          id="videoPlane"
+          src="#video"
+          width="1"
+          height="0.8106"
+          position="0 0 0"
+          rotation="0 0 0"
+        ></a-video>
       </a-entity>
     </a-scene>
+
+    <script>
+      const startButton = document.getElementById("startButton");
+      const sceneEl = document.querySelector("a-scene");
+      const video = document.querySelector("#video");
+
+      startButton.addEventListener("click", () => {
+        startButton.style.display = "none";
+
+        // Show scene and start MindAR
+        sceneEl.setAttribute("visible", "true");
+        sceneEl.components["mindar-image"].start();
+
+        // iOS autoplay support
+        if (typeof AudioContext !== "undefined") {
+          const ctx = new AudioContext();
+          ctx.resume();
+        }
+      });
+
+      sceneEl.addEventListener("targetFound", () => {
+        if (video.currentTime === 0 || video.ended) {
+          video.currentTime = 0;
+          video.play();
+        }
+      });
+
+      sceneEl.addEventListener("targetLost", () => {
+        if (!video.ended) {
+          video.pause();
+        }
+      });
+    </script>
   </body>
 </html>
