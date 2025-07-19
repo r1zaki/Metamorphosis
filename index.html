@@ -28,6 +28,16 @@
     const sceneEl = document.querySelector('a-scene');
     const video = document.getElementById('video');
 
+    function waitForMindARComponent(scene, callback) {
+      if (scene.components && scene.components['mindar-image']) {
+        callback(scene.components['mindar-image']);
+      } else {
+        setTimeout(() => {
+          waitForMindARComponent(scene, callback);
+        }, 100);
+      }
+    }
+
     video.addEventListener('error', (e) => {
       alert('Video playback error');
       console.error(e);
@@ -41,13 +51,9 @@
       startButton.style.display = 'none';
       sceneEl.setAttribute('visible', 'true');
 
-      if (sceneEl.components['mindar-image']) {
-        sceneEl.components['mindar-image'].start();
-      } else {
-        sceneEl.addEventListener('renderstart', () => {
-          sceneEl.components['mindar-image'].start();
-        });
-      }
+      waitForMindARComponent(sceneEl, (mindar) => {
+        mindar.start();
+      });
 
       if (typeof AudioContext !== 'undefined') {
         const ctx = new AudioContext();
