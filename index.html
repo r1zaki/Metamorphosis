@@ -3,44 +3,120 @@
 <head>
   <title>AR.js Video on Custom Marker</title>
   <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
-  <script src="https://cdn.rawgit.com/jeromeetienne/ar.js/2.2.1/aframe/build/aframe-ar.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.4.5/aframe/build/aframe-ar.min.js"></script>
   <style>body { margin: 0; overflow: hidden; }</style>
 </head>
 <body style="margin:0; overflow:hidden;">
-  <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;">
+  <a-scene 
+    embedded 
+    arjs="sourceType: webcam; debugUIEnabled: true; detectionMode: mono_and_matrix; matrixCodeType: 3x3;">
+    
     <a-assets>
-      <video id="video" src="./assets/metamorphosis.mp4" preload="auto" crossorigin="anonymous" webkit-playsinline playsinline muted></video>
+      <!-- Your local video -->
+      <video 
+        id="video" 
+        src="./assets/metamorphosis.mp4" 
+        preload="auto" 
+        crossorigin="anonymous" 
+        webkit-playsinline 
+        playsinline 
+        muted 
+        loop>
+      </video>
     </a-assets>
 
-    <!-- Custom marker -->
+    <!-- Your custom marker -->
     <a-marker type="pattern" url="./assets/patternmetamorphosis.patt">
       <a-video 
         src="#video" 
-        width="1" 
-        height="0.8106" 
+        width="2" 
+        height="1.5" 
         rotation="-90 0 0" 
-        position="0 0 0">
+        position="0 0.5 0">
       </a-video>
+      <!-- Add a simple box as backup to test marker detection -->
+      <a-box 
+        position="0 1 0" 
+        material="color: red;" 
+        animation="property: rotation; to: 0 360 0; loop: true; dur: 2000">
+      </a-box>
+    </a-marker>
+
+    <!-- Fallback Hiro marker for testing -->
+    <a-marker preset="hiro">
+      <a-box 
+        position="0 0.5 0" 
+        material="color: blue;" 
+        animation="property: rotation; to: 0 360 0; loop: true; dur: 2000">
+      </a-box>
     </a-marker>
 
     <a-entity camera></a-entity>
   </a-scene>
 
   <script>
-    const video = document.getElementById('video');
-    const marker = document.querySelector('a-marker');
+    // Wait for AR.js to be ready
+    window.addEventListener('load', () => {
+      const video = document.getElementById('video');
+      const markers = document.querySelectorAll('a-marker');
+      
+      // Add error handling for video
+      video.addEventListener('error', (e) => {
+        console.error('Video error:', e);
+      });
 
-    marker.addEventListener('markerFound', () => {
-      if (video.paused) {
-        video.play();
-      }
-    });
+      video.addEventListener('loadeddata', () => {
+        console.log('Video loaded successfully');
+      });
 
-    marker.addEventListener('markerLost', () => {
-      if (!video.paused) {
-        video.pause();
-      }
+      // Check if pattern file loads
+      fetch('./assets/patternmetamorphosis.patt')
+        .then(response => {
+          if (response.ok) {
+            console.log('Pattern file loaded successfully');
+          } else {
+            console.error('Pattern file failed to load:', response.status);
+          }
+        })
+        .catch(err => console.error('Error loading pattern file:', err));
+
+      // Add listeners to all markers
+      markers.forEach((marker, index) => {
+        const markerType = marker.getAttribute('preset') ? 'Hiro' : 'Custom';
+        
+        marker.addEventListener('markerFound', () => {
+          console.log(`${markerType} marker found!`);
+          if (video.paused) {
+            video.play().catch(e => console.log('Play failed:', e));
+          }
+        });
+
+        marker.addEventListener('markerLost', () => {
+          console.log(`${markerType} marker lost!`);
+          if (!video.paused) {
+            video.pause();
+          }
+        });
+      });
+
+      // Add camera permission check
+      navigator.mediaDevices.getUserMedia({ video: true })
+        .then(stream => {
+          console.log('Camera access granted');
+          stream.getTracks().forEach(track => track.stop()); // Stop the test stream
+        })
+        .catch(err => {
+          console.error('Camera access denied:', err);
+        });
     });
   </script>
+
+  <!-- Debug info -->
+  <div style="position: fixed; top: 10px; left: 10px; background: rgba(0,0,0,0.7); color: white; padding: 10px; font-family: monospace; font-size: 12px; z-index: 1000;">
+    <div>🔴 Red box = Custom marker detected</div>
+    <div>🔵 Blue box = Hiro marker detected</div>
+    <div>Check browser console for debug info</div>
+    <div>Make sure lighting is good and marker is flat</div>
+  </div>
 </body>
 </html>
