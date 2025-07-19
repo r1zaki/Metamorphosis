@@ -53,23 +53,32 @@
     </a-assets>
 
     <!-- Your custom marker with better configuration -->
-    <a-marker 
-      type="pattern" 
-      url="./assets/patternmeta.patt"
-      markerhandler
-      smooth="true"
-      smoothCount="10"
-      smoothTolerance=".01"
-      smoothThreshold="5">
-      <a-video 
-        src="#video" 
-        width="1" 
-        height="0.75" 
-        rotation="0 0 0" 
-        position="3 0 0"
-        wireframe: true>
-      </a-video>
-    </a-marker>
+   <a-marker 
+  type="pattern" 
+  url="./assets/patternmeta.patt"
+  smooth="true"
+  smoothCount="10"
+  smoothTolerance=".01"
+  smoothThreshold="5">
+
+  <!-- Debug box at marker origin -->
+  <a-box 
+    position="0 0 0" 
+    depth="0.1" 
+    height="0.1" 
+    width="0.1" 
+    material="color: red; wireframe: true;">
+  </a-box>
+
+  <!-- Your video -->
+  <a-video 
+    src="#video" 
+    width="1" 
+    height="0.75" 
+    rotation="-90 0 0" 
+    position="0 0 0">
+  </a-video>
+</a-marker>
 
     <!-- Fallback Hiro marker for testing -->
     <a-marker 
