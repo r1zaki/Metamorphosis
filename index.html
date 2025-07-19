@@ -16,7 +16,7 @@
       position: fixed;
       bottom: 10px;
       left: 10px;
-      z-index: 1000;
+      z-index: 10;
     }
     
     /* Ensure proper viewport on mobile */
@@ -66,7 +66,7 @@
         width="1" 
         height="0.75" 
         rotation="-90 0 0" 
-        position="0 1 0">
+        position="0 0.01 0">
       </a-video>
     </a-marker>
 
@@ -79,7 +79,7 @@
       smoothTolerance=".01"
       smoothThreshold="5">
       <a-box 
-        position="0 1 0" 
+        position="0 0.01 0" 
         material="color: blue;" 
         animation="property: rotation; to: 0 360 0; loop: true; dur: 2000">
       </a-box>
