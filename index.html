@@ -1,171 +1,97 @@
 <!DOCTYPE html>
 <html>
-<head>
-  <meta charset="UTF-8">
-  <title>AR Video Overlay - Cross Platform</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <!-- A-Frame first -->
-  <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
-  <!-- AR.js official CDN -->
-  <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
-  <style>
-    body {
-      margin: 0;
-      padding: 0;
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-    }
-    #start-btn {
-      position: fixed;
-      top: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 1000;
-      padding: 15px 30px;
-      font-size: 18px;
-      background: #007bff;
-      color: white;
-      border: none;
-      border-radius: 5px;
-    }
-    #error {
-      position: fixed;
-      top: 60px;
-      left: 10px;
-      color: red;
-      z-index: 1000;
-    }
-    #status {
-      position: fixed;
-      top: 90px;
-      left: 10px;
-      color: blue;
-      z-index: 1000;
-      font-size: 14px;
-    }
-    #device-info {
-      position: fixed;
-      top: 120px;
-      left: 10px;
-      color: green;
-      z-index: 1000;
-      font-size: 12px;
-    }
-  </style>
-</head>
-<body>
-  <div id="status">Loading AR...</div>
-  <div id="device-info"></div>
-  <a-scene embedded
-    arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3; patternRatio: 0.75;"
-    vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: true" style="display: none;">
-    <a-assets>
-      <video id="video" src="assets/metamorphosis.mp4" loop muted playsinline webkit-playsinline></video>
-    </a-assets>
-    <a-marker type="pattern" url="assets/pattern.patt" smooth="true" smoothCount="80" smoothTolerance="0.15" smoothThreshold="40">
-      <a-video id="ar-video" src="#video" width="1" height="0.8106" position="0 0 0"
-        autoplay loop muted playsinline webkit-playsinline></a-video>
-    </a-marker>
-    <a-entity camera></a-entity>
-  </a-scene>
-  <script>
-    const statusDiv = document.getElementById('status');
-    const deviceInfoDiv = document.getElementById('device-info');
-    const scene = document.querySelector('a-scene');
-    const video = document.getElementById('video');
-    const arVideo = document.getElementById('ar-video');
-
-    // Device detection function
-    function detectDevice() {
-      const userAgent = navigator.userAgent || navigator.vendor || window.opera;
-      
-      // Check for iOS
-      if (/iPad|iPhone|iPod/.test(userAgent) && !window.MSStream) {
-        return 'ios';
+  <head>
+    <title>MindAR - Metamorphosis Video</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <script src="https://cdn.jsdelivr.net/npm/aframe@1.2.0/dist/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.1.4/dist/aframe/mindar-aframe.prod.js"></script>
+    <style>
+      body { margin: 0; overflow: hidden; }
+      #startButton {
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        z-index: 999;
+        padding: 10px 20px;
+        font-size: 16px;
+        background-color: #007bff;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
       }
-      
-      // Check for Android
-      if (/android/i.test(userAgent)) {
-        return 'android';
-      }
-      
-      // Default to desktop/other
-      return 'other';
-    }
+    </style>
+  </head>
+  <body>
+    <!-- User tap required for autoplay (especially on iOS) -->
+    <button id="startButton">Start AR</button>
 
-    // Function to set appropriate rotation based on device
-    function setVideoRotation() {
-      const deviceType = detectDevice();
-      let rotation = '-90 0 0'; // Default iOS rotation
-      
-      switch(deviceType) {
-        case 'ios':
-          rotation = '-90 0 0';
-          deviceInfoDiv.textContent = 'Device: iOS - Using iOS rotation';
-          break;
-        case 'android':
-          // Android often needs different rotation due to coordinate system differences
-          rotation = '90 0 0'; // Try this first, you might need to adjust
-          deviceInfoDiv.textContent = 'Device: Android - Using Android rotation';
-          break;
-        default:
-          rotation = '-90 0 0';
-          deviceInfoDiv.textContent = 'Device: Other - Using default rotation';
-          break;
-      }
-      
-      // Apply the rotation to the video element
-      arVideo.setAttribute('rotation', rotation);
-      
-      console.log(`Device: ${deviceType}, Rotation: ${rotation}`);
-    }
+    <a-scene
+      mindar-image="imageTargetSrc: ./assets/target.mind;"
+      embedded
+      color-space="sRGB"
+      renderer="colorManagement: true, physicallyCorrectLights"
+      vr-mode-ui="enabled: false"
+      device-orientation-permission-ui="enabled: true"
+      visible="false"
+    >
+      <a-assets>
+        <video
+          id="video"
+          src="./assets/metamorphosis.mp4"
+          preload="auto"
+          crossorigin="anonymous"
+          webkit-playsinline
+          playsinline
+          muted
+        ></video>
+      </a-assets>
 
-    // Automatically start AR when page loads
-    window.addEventListener('DOMContentLoaded', () => {
-      statusDiv.textContent = 'Starting AR...';
-      
-      // Set appropriate rotation based on device
-      setVideoRotation();
-      
-      scene.style.display = 'block';
-      
-      // Play video when marker is found
-      const marker = scene.querySelector('a-marker');
-      marker.addEventListener('markerFound', () => {
-        video.play();
-        statusDiv.textContent = 'Marker found - Video playing';
-      });
-      
-      marker.addEventListener('markerLost', () => {
-        statusDiv.textContent = 'Marker lost';
-      });
-    });
+      <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-    // Show status when video is loaded
-    video.addEventListener('loadeddata', () => {
-      statusDiv.textContent = 'Video loaded - Point camera at marker';
-    });
+      <a-entity mindar-image-target="targetIndex: 0">
+        <a-video
+          id="videoPlane"
+          src="#video"
+          width="1"
+          height="0.8106"
+          position="0 0 0"
+          rotation="0 0 0"
+        ></a-video>
+      </a-entity>
+    </a-scene>
 
-    // Add error handling
-    video.addEventListener('error', (e) => {
-      console.error('Video error:', e);
-      statusDiv.textContent = 'Video loading error';
-      statusDiv.style.color = 'red';
-    });
+    <script>
+      const startButton = document.getElementById("startButton");
+      const sceneEl = document.querySelector("a-scene");
+      const video = document.querySelector("#video");
 
-    // Additional Android-specific adjustments
-    if (detectDevice() === 'android') {
-      // Android sometimes needs different camera parameters
-      const sceneEl = document.querySelector('a-scene');
-      sceneEl.addEventListener('loaded', () => {
-        // You might need to adjust these values based on testing
-        const camera = sceneEl.querySelector('[camera]');
-        if (camera) {
-          camera.setAttribute('look-controls', 'enabled: false');
+      startButton.addEventListener("click", () => {
+        startButton.style.display = "none";
+
+        // Show scene and start MindAR
+        sceneEl.setAttribute("visible", "true");
+        sceneEl.components["mindar-image"].start();
+
+        // iOS autoplay support
+        if (typeof AudioContext !== "undefined") {
+          const ctx = new AudioContext();
+          ctx.resume();
         }
       });
-    }
-  </script>
-</body>
+
+      sceneEl.addEventListener("targetFound", () => {
+        if (video.currentTime === 0 || video.ended) {
+          video.currentTime = 0;
+          video.play();
+        }
+      });
+
+      sceneEl.addEventListener("targetLost", () => {
+        if (!video.ended) {
+          video.pause();
+        }
+      });
+    </script>
+  </body>
 </html>
