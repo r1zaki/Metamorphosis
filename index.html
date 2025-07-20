@@ -10,6 +10,12 @@
             init: function () {
                 var marker = this.el;
                 this.vid = document.querySelector("#vid");
+                this.videoEl = marker.querySelector("a-video");
+                
+                // Wait for video metadata to load
+                this.vid.addEventListener('loadedmetadata', function() {
+                    // Video is ready, but keep it hidden until marker is found
+                }.bind(this));
                 
                 // Try to enable autoplay when scene loads
                 document.addEventListener('click', function() {
@@ -18,6 +24,7 @@
                 
                 marker.addEventListener('markerFound', function () {
                     this.toggle = true;
+                    this.videoEl.setAttribute('visible', true);
                     this.vid.play().catch(e => {
                         console.log('Video play failed on marker found:', e);
                         // Fallback: try to play after a short delay
@@ -29,6 +36,7 @@
                 
                 marker.addEventListener('markerLost', function () {
                     this.toggle = false;
+                    this.videoEl.setAttribute('visible', false);
                     this.vid.pause();
                 }.bind(this));
             },
@@ -48,13 +56,14 @@
             <video
                 id="vid"
                 src="assets/metamorphosis.mp4"
-                preload="auto"
+                preload="metadata"
                 response-type="arraybuffer"
                 loop
                 crossorigin
                 webkit-playsinline
                 muted
                 playsinline
+                poster=""
             ></video>
         </a-assets>
         <a-marker
@@ -73,11 +82,12 @@
         >
             <a-video
                 src="#vid"
-                scale="0.84 1 1"
+                scale="1 0.846 1"
                 position="0 0.01 0"
                 rotation="-90 0 0"
                 class="clickable"
                 gesture-handler
+                visible="false"
             ></a-video>
         </a-marker>
         <a-entity camera></a-entity>
