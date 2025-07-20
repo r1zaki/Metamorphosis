@@ -1,89 +1,75 @@
+
 <!doctype html>
 <html>
 <head>
-  <script src="https://aframe.io/releases/1.0.4/aframe.min.js"></script>
-  <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
-  <script src="https://raw.githack.com/AR-js-org/studio-backend/master/src/modules/marker/tools/gesture-detector.js"></script>
-  <script src="https://raw.githack.com/AR-js-org/studio-backend/master/src/modules/marker/tools/gesture-handler.js"></script>
-  <script>
-    AFRAME.registerComponent('videohandler', {
-      init: function () {
-        var marker = this.el;
-        this.vid = document.querySelector("#vid");
-        this.videoEl = marker.querySelector("a-video");
-
-        // Preload video
-        this.vid.load();
-
-        marker.addEventListener('markerFound', () => {
-          this.videoEl.setAttribute('material', 'transparent', false);
-          this.videoEl.setAttribute('material', 'opacity', 1);
-
-          this.vid.currentTime = 0;
-          this.vid.play().catch(e => {
-            console.warn('Video play failed:', e);
-          });
+    <script src="https://aframe.io/releases/1.0.4/aframe.min.js"></script>
+    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
+    <script src="https://raw.githack.com/AR-js-org/studio-backend/master/src/modules/marker/tools/gesture-detector.js"></script>
+    <script src="https://raw.githack.com/AR-js-org/studio-backend/master/src/modules/marker/tools/gesture-handler.js"></script>
+    <script>
+        AFRAME.registerComponent('videohandler', {
+            init: function () {
+                var marker = this.el;
+                this.vid = document.querySelector("#vid");
+                marker.addEventListener('markerFound', function () {
+                    this.toggle = true;
+                    this.vid.play();
+                }.bind(this));
+                marker.addEventListener('markerLost', function () {
+                    this.toggle = false;
+                    this.vid.pause();
+                }.bind(this));
+            },
         });
-
-        marker.addEventListener('markerLost', () => {
-          this.videoEl.setAttribute('material', 'opacity', 0);
-          this.vid.pause();
-        });
-      }
-    });
-  </script>
+    </script>
 </head>
-
 <body style="margin: 0; overflow: hidden;">
-  <a-scene
-    vr-mode-ui="enabled: false"
-    loading-screen="enabled: false;"
-    arjs='sourceType: webcam; debugUIEnabled: false;'
-    id="scene"
-    embedded
-    gesture-detector
-  >
-    <a-assets>
-      <video
-        id="vid"
-        src="assets/metamorphosis.mp4"
-        preload="metadata"
-        loop
-        crossorigin
-        autoplay
-        muted
-        playsinline
-        webkit-playsinline
-        style="display: none;"
-      ></video>
-    </a-assets>
-
-    <a-marker
-      type="pattern"
-      preset="custom"
-      url="assets/patternmeta.patt"
-      videohandler
-      smooth="true"
-      smoothCount="10"
-      smoothTolerance="0.01"
-      smoothThreshold="5"
-      raycaster="objects: .clickable"
-      emitevents="true"
-      cursor="fuse: false; rayOrigin: mouse;"
-      id="markerA"
+    <a-scene
+        vr-mode-ui="enabled: false"
+        loading-screen="enabled: false;"
+        arjs='sourceType: webcam; debugUIEnabled: false;'
+        id="scene"
+        embedded
+        gesture-detector
     >
-      <a-video
-        src="#vid"
-        scale="1 0.56 1"
-        position="0 0.01 0"
-        rotation="-90 0 0"
-        class="clickable"
-        gesture-handler
-        material="transparent: true; opacity: 0"
-      ></a-video>
-    </a-marker>
-
-    <a-entity camera></a-entity>
-  </a-scene>
+        <a-assets>
+            <video
+                id="vid"
+                src="assets/metamorphosis.mp4"
+                preload="auto"
+                response-type="arraybuffer"
+                loop
+                crossorigin
+                webkit-playsinline
+                autoplay
+                muted
+                playsinline
+            ></video>
+        </a-assets>
+        <a-marker
+            type="pattern"
+            preset="custom"
+            url="assets/patternmeta.patt"
+            videohandler
+            smooth="true"
+            smoothCount="10"
+            smoothTolerance="0.01"
+            smoothThreshold="5"
+            raycaster="objects: .clickable"
+            emitevents="true"
+            cursor="fuse: false; rayOrigin: mouse;"
+            id="markerA"
+        >
+            <a-video
+                src="#vid"
+                scale="0.84 1 1"
+                position="0 0.01 0"
+                rotation="-90 0 0"
+                class="clickable"
+                gesture-handler
+            ></a-video>
+        </a-marker>
+        <a-entity camera></a-entity>
+    </a-scene>
 </body>
 </html>
