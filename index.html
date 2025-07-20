@@ -1,99 +1,79 @@
-<!doctype html>
+<!DOCTYPE html>
 <html>
 <head>
-    <script src="https://aframe.io/releases/1.0.4/aframe.min.js"></script>
-    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
-    <script src="https://raw.githack.com/AR-js-org/studio-backend/master/src/modules/marker/tools/gesture-detector.js"></script>
-    <script src="https://raw.githack.com/AR-js-org/studio-backend/master/src/modules/marker/tools/gesture-handler.js"></script>
-    <script>
-        AFRAME.registerComponent('videohandler', {
-            init: function () {
-                var marker = this.el;
-                this.vid = document.querySelector("#vid");
-                this.videoEl = marker.querySelector("a-video");
-                
-                // Preload and prepare video
-                this.vid.load();
-                
-                // Enable autoplay on first user interaction
-                document.addEventListener('touchstart', this.enableAutoplay.bind(this), { once: true });
-                document.addEventListener('click', this.enableAutoplay.bind(this), { once: true });
-                
-                marker.addEventListener('markerFound', function () {
-                    this.toggle = true;
-                    this.videoEl.setAttribute('material', 'transparent', false);
-                    this.videoEl.setAttribute('material', 'opacity', 1);
-                    
-                    // Force play
-                    this.vid.currentTime = 0;
-                    this.vid.play().catch(e => {
-                        console.log('Video play failed:', e);
-                    });
-                }.bind(this));
-                
-                marker.addEventListener('markerLost', function () {
-                    this.toggle = false;
-                    this.videoEl.setAttribute('material', 'opacity', 0);
-                    this.vid.pause();
-                }.bind(this));
-            },
-            
-            enableAutoplay: function() {
-                this.vid.play().then(() => {
-                    this.vid.pause(); // Immediately pause, but now autoplay is enabled
-                }).catch(e => console.log('Autoplay enable failed:', e));
-            }
-        });
-    </script>
+  <meta charset="utf-8">
+  <title>AR Video Marker with Button</title>
+  <script src="https://aframe.io/releases/1.0.4/aframe.min.js"></script>
+  <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
 </head>
+
 <body style="margin: 0; overflow: hidden;">
-    <a-scene
-        vr-mode-ui="enabled: false"
-        loading-screen="enabled: false;"
-        arjs='sourceType: webcam; debugUIEnabled: false;'
-        id="scene"
-        embedded
-        gesture-detector
+  <!-- Play/Pause button -->
+  <button id="startBtn" style="
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 999;
+    padding: 10px 20px;
+    font-size: 16px;
+  ">
+    ▶️ Start Video
+  </button>
+
+  <a-scene
+    vr-mode-ui="enabled: false"
+    embedded
+    arjs="sourceType: webcam; debugUIEnabled: false;"
+  >
+    <a-assets>
+      <video
+        id="vid"
+        src="assets/asset.mp4"
+        preload="auto"
+        loop
+        muted
+        playsinline
+        webkit-playsinline
+      ></video>
+    </a-assets>
+
+    <a-marker
+      type="pattern"
+      preset="custom"
+      url="assets/marker.patt"
+      id="markerA"
     >
-        <a-assets>
-            <video
-                id="vid"
-                src="assets/metamorphosis.mp4"
-                preload="metadata"
-                response-type="arraybuffer"
-                loop
-                crossorigin
-                webkit-playsinline
-                muted
-                playsinline
-                poster=""
-            ></video>
-        </a-assets>
-        <a-marker
-            type="pattern"
-            preset="custom"
-            url="assets/patternmeta.patt"
-            videohandler
-            smooth="true"
-            smoothCount="10"
-            smoothTolerance="0.01"
-            smoothThreshold="5"
-            raycaster="objects: .clickable"
-            emitevents="true"
-            cursor="fuse: false; rayOrigin: mouse;"
-            id="markerA"
-        >
-            <a-video
-                src="#vid"
-                scale="1 0.56 1"
-                position="0 0.01 0"
-                rotation="-90 0 0"
-                class="clickable"
-                gesture-handler
-                material="transparent: true; opacity: 0"
-            ></a-video>
-        </a-marker>
-        <a-entity camera></a-entity>
-    </a-scene>
+      <a-video
+        id="videoPlane"
+        src="#vid"
+        scale="0.84 1 1"
+        position="0.05 0 0"
+        rotation="-90 0 0"
+        visible="false"
+      ></a-video>
+    </a-marker>
+
+    <a-entity camera></a-entity>
+  </a-scene>
+
+  <script>
+    const startBtn = document.getElementById('startBtn');
+    const video = document.getElementById('vid');
+    const videoPlane = document.getElementById('videoPlane');
+
+    startBtn.addEventListener('click', () => {
+      video.play().then(() => {
+        videoPlane.setAttribute('visible', 'true');
+        startBtn.style.display = 'none'; // hide button after click
+      }).catch((err) => {
+        console.error("Autoplay failed:", err);
+      });
+    });
+
+    // Optional: pause video when marker is lost
+    document.querySelector('#markerA').addEventListener('markerLost', () => {
+      video.pause();
+    });
+  </script>
 </body>
 </html>
