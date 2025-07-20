@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>AR.js Video on Marker – Hide When Lost</title>
+  <title>AR.js Video on Marker – Custom Positioned</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <style>
     body { margin: 0; overflow: hidden; }
@@ -32,7 +32,6 @@
       ></video>
     </a-assets>
 
-    <!-- Marker -->
     <a-marker
       type="pattern"
       url="assets/patternmeta.patt"
@@ -42,7 +41,6 @@
       smoothThreshold="5"
       id="marker"
     >
-      <!-- Wrapper entity for flat orientation -->
       <a-entity id="videoWrapper" position="2.9 0 -0.2" rotation="-90 0 0">
         <a-video
           id="videoPlane"
@@ -52,53 +50,10 @@
           position="0 0 0"
           visible="false"
         ></a-video>
-
-        <!-- Optional invisible tap zone (not overlapping video) -->
-        <a-plane
-          id="tapZone"
-          position="0 0.8 0"
-          width="1"
-          height="0.3"
-          material="opacity: 0.001; transparent: true;"
-          class="clickable"
-        ></a-plane>
       </a-entity>
     </a-marker>
 
     <a-entity camera></a-entity>
   </a-scene>
 
-  <script>
-    const video = document.getElementById('video');
-    const videoPlane = document.getElementById('videoPlane');
-    const marker = document.getElementById('marker');
-    const tapZone = document.getElementById('tapZone');
-
-    marker.addEventListener('markerFound', () => {
-      console.log('Marker detected');
-      videoPlane.setAttribute('visible', true);
-      video.currentTime = 0;
-      video.play().catch(err => {
-        console.warn('Autoplay blocked, awaiting user interaction');
-      });
-    });
-
-    marker.addEventListener('markerLost', () => {
-      console.log('Marker lost');
-      video.pause();
-      videoPlane.setAttribute('visible', false);
-    });
-
-    // Optional tap fallback (not on video)
-    tapZone.addEventListener('click', () => {
-      if (video.paused) {
-        video.play().then(() => {
-          console.log('Started via user tap');
-        }).catch(err => {
-          console.error('Playback failed:', err);
-        });
-      }
-    });
-  </script>
-</body>
-</html>
+  <
