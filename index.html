@@ -1,70 +1,50 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>AR.js Video on Marker – Portrait Priority</title>
+  <title>AR.js Marker Video – Reliable Playback</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <style>
     body { margin: 0; overflow: hidden; }
-    canvas { width: 100vw !important; height: 100vh !important; display: block; }
+    canvas { width: 100vw; height: 100vh; display: block; }
   </style>
-
-  <!-- A-Frame and AR.js -->
   <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
   <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.4.5/aframe/build/aframe-ar.min.js"></script>
 </head>
 <body>
-  <a-scene
-    embedded
-    arjs="sourceType: webcam; debugUIEnabled: false;"
-    vr-mode-ui="enabled: false"
-    renderer="logarithmicDepthBuffer: true; antialias: true; alpha: true"
-  >
+  <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;"
+           vr-mode-ui="enabled: false"
+           renderer="logarithmicDepthBuffer: true; antialias: true; alpha: true">
     <a-assets>
-      <video
-        id="video"
-        src="assets/metamorphosis.mp4"
-        preload="auto"
-        loop
-        muted
-        crossorigin="anonymous"
-        playsinline
-        webkit-playsinline
-      ></video>
+      <video id="video"
+             src="assets/metamorphosis.mp4"
+             preload="auto"
+             muted
+             loop
+             playsinline
+             webkit-playsinline
+             crossorigin="anonymous">
+      </video>
     </a-assets>
 
-    <!-- Marker -->
-    <a-marker
-      type="pattern"
-      url="assets/patternmeta.patt"
-      smooth="true"
-      smoothCount="10"
-      smoothTolerance="0.01"
-      smoothThreshold="5"
-      id="marker"
-    >
-      <!-- Wrapper entity for correct orientation -->
-      <a-entity id="videoWrapper" position="2.4 0 0.01" rotation="-90 0 0">
-        <a-video
-          id="videoPlane"
-          src="#video"
-          width="1"
-          height="0.846"
-          position="0 0 0"
-          visible="false"
-        ></a-video>
-
-        <!-- Tap zone to trigger playback if autoplay blocked -->
-        <a-plane
-          id="tapZone"
-          position="0 1 0"
-          width="1"
-          height="0.3"
-          material="opacity: 0.001; transparent: true;"
-          class="clickable"
-        ></a-plane>
+    <a-marker id="marker"
+              type="pattern"
+              url="assets/patternmeta.patt"
+              smooth="true" smoothCount="10" smoothTolerance="0.01" smoothThreshold="5">
+      <a-entity rotation="-90 0 0" position="0 0 0.01">
+        <a-video id="videoPlane"
+                 src="#video"
+                 width="1" height="0.56"
+                 position="0 0 0"
+                 visible="false">
+        </a-video>
+        <a-plane id="tapZone"
+                 position="0 1 0"
+                 width="1" height="0.3"
+                 material="opacity: 0.001; transparent: true;"
+                 class="clickable">
+        </a-plane>
       </a-entity>
     </a-marker>
-
     <a-entity camera></a-entity>
   </a-scene>
 
@@ -74,22 +54,19 @@
     const marker = document.getElementById('marker');
     const tapZone = document.getElementById('tapZone');
 
-    function showAndPlayVideo() {
+    // Show video when ready and marker is detected
+    function onReadyAndPlay() {
       videoPlane.setAttribute('visible', true);
       video.currentTime = 0;
-      video.play().then(() => {
-        console.log('Video playing');
-      }).catch(err => {
-        console.warn('Autoplay blocked, waiting for tap');
-      });
+      video.play().catch(err => console.warn('Autoplay blocked:', err));
     }
 
     marker.addEventListener('markerFound', () => {
       console.log('Marker detected');
       if (video.readyState >= 2) {
-        showAndPlayVideo();
+        onReadyAndPlay();
       } else {
-        video.addEventListener('loadeddata', showAndPlayVideo, { once: true });
+        video.addEventListener('loadeddata', onReadyAndPlay, { once: true });
       }
     });
 
@@ -99,18 +76,15 @@
       videoPlane.setAttribute('visible', false);
     });
 
-    // Optional tap fallback (invisible plane above video)
+    // Fallback tap zone if autoplay blocked
     tapZone.addEventListener('click', () => {
       if (video.paused) {
-        video.play().then(() => {
-          console.log('Started via user tap');
-        }).catch(err => {
-          console.error('Playback failed:', err);
-        });
+        video.play().then(() => console.log('Started via explicit tap'))
+                   .catch(e => console.error('Playback failed:', e));
       }
     });
 
-    // Force video texture update while playing
+    // Force video texture refresh during playback
     video.addEventListener('play', () => {
       const refresh = () => {
         if (!video.paused && !video.ended) {
