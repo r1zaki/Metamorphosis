@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>AR.js Video on Marker – Hide When Lost</title>
+  <title>AR.js Video on Marker – Portrait Priority</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <style>
     body { margin: 0; overflow: hidden; }
@@ -42,21 +42,21 @@
       smoothThreshold="5"
       id="marker"
     >
-      <!-- Wrapper entity for flat orientation -->
-      <a-entity id="videoWrapper" position="2.4 -0.01 0" rotation="-90 0 0">
+      <!-- Wrapper entity for correct orientation -->
+      <a-entity id="videoWrapper" position="2.4 0 0.01" rotation="-90 0 0">
         <a-video
           id="videoPlane"
           src="#video"
           width="1"
-          height="1"
+          height="0.846"
           position="0 0 0"
           visible="false"
         ></a-video>
 
-        <!-- Optional invisible tap zone (not overlapping video) -->
+        <!-- Tap zone to trigger playback if autoplay blocked -->
         <a-plane
           id="tapZone"
-          position="0 0.8 0"
+          position="0 1 0"
           width="1"
           height="0.3"
           material="opacity: 0.001; transparent: true;"
@@ -74,13 +74,23 @@
     const marker = document.getElementById('marker');
     const tapZone = document.getElementById('tapZone');
 
-    marker.addEventListener('markerFound', () => {
-      console.log('Marker detected');
+    function showAndPlayVideo() {
       videoPlane.setAttribute('visible', true);
       video.currentTime = 0;
-      video.play().catch(err => {
-        console.warn('Autoplay blocked, awaiting user interaction');
+      video.play().then(() => {
+        console.log('Video playing');
+      }).catch(err => {
+        console.warn('Autoplay blocked, waiting for tap');
       });
+    }
+
+    marker.addEventListener('markerFound', () => {
+      console.log('Marker detected');
+      if (video.readyState >= 2) {
+        showAndPlayVideo();
+      } else {
+        video.addEventListener('loadeddata', showAndPlayVideo, { once: true });
+      }
     });
 
     marker.addEventListener('markerLost', () => {
@@ -89,7 +99,7 @@
       videoPlane.setAttribute('visible', false);
     });
 
-    // Optional tap fallback (not on video)
+    // Optional tap fallback (invisible plane above video)
     tapZone.addEventListener('click', () => {
       if (video.paused) {
         video.play().then(() => {
@@ -98,6 +108,17 @@
           console.error('Playback failed:', err);
         });
       }
+    });
+
+    // Force video texture update while playing
+    video.addEventListener('play', () => {
+      const refresh = () => {
+        if (!video.paused && !video.ended) {
+          videoPlane.setAttribute('material', 'src', '#video');
+          requestAnimationFrame(refresh);
+        }
+      };
+      refresh();
     });
   </script>
 </body>
