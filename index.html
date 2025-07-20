@@ -10,10 +10,23 @@
             init: function () {
                 var marker = this.el;
                 this.vid = document.querySelector("#vid");
+                
+                // Try to enable autoplay when scene loads
+                document.addEventListener('click', function() {
+                    this.vid.play().catch(e => console.log('Video play failed:', e));
+                }.bind(this), { once: true });
+                
                 marker.addEventListener('markerFound', function () {
                     this.toggle = true;
-                    this.vid.play();
+                    this.vid.play().catch(e => {
+                        console.log('Video play failed on marker found:', e);
+                        // Fallback: try to play after a short delay
+                        setTimeout(() => {
+                            this.vid.play().catch(e => console.log('Delayed play failed:', e));
+                        }, 100);
+                    });
                 }.bind(this));
+                
                 marker.addEventListener('markerLost', function () {
                     this.toggle = false;
                     this.vid.pause();
@@ -40,7 +53,6 @@
                 loop
                 crossorigin
                 webkit-playsinline
-                autoplay
                 muted
                 playsinline
             ></video>
