@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>AR.js Marker Video Autoplay</title>
+  <title>AR.js Marker Video Autoplay + Touch Fix</title>
   <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
   <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.4.5/aframe/build/aframe-ar.min.js"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
@@ -41,12 +41,24 @@
       id="customMarker"
     >
       <a-entity rotation="-90 0 0">
+        <!-- Video plane -->
         <a-video
           id="videoPlane"
           src="#video"
           scale="1 0.56 1"
           position="0 0 0"
         ></a-video>
+
+        <!-- Tap zone plane, placed below the video -->
+        <a-plane
+          id="tapZone"
+          position="0 -0.8 0.01"
+          width="1"
+          height="0.3"
+          color="#FFFFFF"
+          opacity="0.001"
+          class="clickable"
+        ></a-plane>
       </a-entity>
     </a-marker>
 
@@ -54,26 +66,32 @@
   </a-scene>
 
   <script>
-    const marker = document.querySelector('#customMarker');
     const video = document.querySelector('#video');
+    const marker = document.querySelector('#customMarker');
+    const tapZone = document.querySelector('#tapZone');
 
-    // Try to preload and play muted video immediately
     video.load();
 
     marker.addEventListener('markerFound', () => {
       console.log('Marker found');
-      if (video.paused) {
-        video.currentTime = 0;
-        video.play().catch(err => {
-          console.warn('Autoplay failed:', err);
-        });
-      }
+      // Try autoplay
+      video.currentTime = 0;
+      video.play().catch(err => {
+        console.warn('Autoplay failed. Awaiting user interaction...');
+      });
     });
 
     marker.addEventListener('markerLost', () => {
       console.log('Marker lost');
-      if (!video.paused) {
-        video.pause();
+      video.pause();
+    });
+
+    // Touch fallback: if autoplay blocked
+    tapZone.addEventListener('click', () => {
+      if (video.paused) {
+        video.play().then(() => {
+          console.log('Video played via user interaction');
+        }).catch(e => console.warn('Touch play failed:', e));
       }
     });
   </script>
