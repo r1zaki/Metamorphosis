@@ -1,92 +1,81 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>AR.js Video on Custom Marker</title>
+  <title>AR.js Marker Video Autoplay</title>
   <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
   <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.4.5/aframe/build/aframe-ar.min.js"></script>
-  <style>
-    body { 
-      margin: 0; 
-      overflow: hidden; 
-      font-family: monospace;
-    }
-    #arjsDebugUIContainer {
-      position: fixed;
-      bottom: 10px;
-      left: 10px;
-      z-index: 10;
-    }
-    canvas {
-      display: block;
-      width: 100vw !important;
-      height: 100vh !important;
-    }
-  </style>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <style>
+    body { margin: 0; overflow: hidden; }
+    canvas { width: 100vw !important; height: 100vh !important; display: block; }
+  </style>
 </head>
-<body style="margin:0; overflow:hidden;">
-  <a-scene 
-    embedded 
-    arjs="sourceType: webcam; debugUIEnabled: true; detectionMode: mono; trackingMethod: best; markersAreaEnabled: true; cameraParametersUrl: https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.4.5/data/data/camera_para.dat;"
+
+<body>
+  <a-scene
+    embedded
+    arjs="sourceType: webcam; debugUIEnabled: false;"
     vr-mode-ui="enabled: false;"
     renderer="logarithmicDepthBuffer: true; antialias: true; alpha: true;"
-    arjs-hit-testing="true">
-
+  >
     <a-assets>
-      <video 
-        id="video" 
-        src="./assets/metamorphosis.mp4" 
-        preload="auto" 
-        crossorigin="anonymous" 
-        webkit-playsinline="true"
-        playsinline="true" 
-        muted
+      <video
+        id="video"
+        src="assets/metamorphosis.mp4"
+        preload="auto"
         loop
+        muted
         crossorigin="anonymous"
+        webkit-playsinline
+        playsinline
       ></video>
     </a-assets>
 
-    <a-marker 
-      type="pattern" 
-      url="./assets/patternmeta.patt"
+    <a-marker
+      type="pattern"
+      url="assets/patternmeta.patt"
       smooth="true"
       smoothCount="10"
-      smoothTolerance=".01"
+      smoothTolerance="0.01"
       smoothThreshold="5"
       id="customMarker"
     >
-      <a-video 
-        id="videoPlane"
-        src="#video" 
-        scale="1 1 1" 
-        position="0 0 0" 
-        rotation="-90 0 0"
-      ></a-video>
+      <a-entity rotation="-90 0 0">
+        <a-video
+          id="videoPlane"
+          src="#video"
+          scale="1 0.56 1"
+          position="0 0 0"
+        ></a-video>
+      </a-entity>
     </a-marker>
 
-    <a-entity camera look-controls-enabled="false" wasd-controls-enabled="false"></a-entity>
+    <a-entity camera></a-entity>
   </a-scene>
 
   <script>
-    const video = document.querySelector('#video');
     const marker = document.querySelector('#customMarker');
+    const video = document.querySelector('#video');
 
-    // Play video when marker is found, pause when lost
+    // Try to preload and play muted video immediately
+    video.load();
+
     marker.addEventListener('markerFound', () => {
-      console.log('Marker found, playing video');
-      video.play().catch(err => console.warn('Video play error:', err));
+      console.log('Marker found');
+      if (video.paused) {
+        video.currentTime = 0;
+        video.play().catch(err => {
+          console.warn('Autoplay failed:', err);
+        });
+      }
     });
 
     marker.addEventListener('markerLost', () => {
-      console.log('Marker lost, pausing video');
-      video.pause();
+      console.log('Marker lost');
+      if (!video.paused) {
+        video.pause();
+      }
     });
-
-    // For Android camera fixes (optional, keep if you want)
-    if (/Android/i.test(navigator.userAgent)) {
-      const scene = document.querySelector('a-scene');
-      scene.setAttribute('arjs', 'sourceType: webcam; debugUIEnabled: true; detectionMode: mono; trackingMethod: best; markersAreaEnabled: true; sourceWidth: 1280; sourceHeight: 960; displayWidth: 1280; displayHeight: 960;');
-    }
   </script>
 </body>
 </html>
