@@ -12,34 +12,37 @@
                 this.vid = document.querySelector("#vid");
                 this.videoEl = marker.querySelector("a-video");
                 
-                // Wait for video metadata to load
-                this.vid.addEventListener('loadedmetadata', function() {
-                    // Video is ready, but keep it hidden until marker is found
-                }.bind(this));
+                // Preload and prepare video
+                this.vid.load();
                 
-                // Try to enable autoplay when scene loads
-                document.addEventListener('click', function() {
-                    this.vid.play().catch(e => console.log('Video play failed:', e));
-                }.bind(this), { once: true });
+                // Enable autoplay on first user interaction
+                document.addEventListener('touchstart', this.enableAutoplay.bind(this), { once: true });
+                document.addEventListener('click', this.enableAutoplay.bind(this), { once: true });
                 
                 marker.addEventListener('markerFound', function () {
                     this.toggle = true;
-                    this.videoEl.setAttribute('visible', true);
+                    this.videoEl.setAttribute('material', 'transparent', false);
+                    this.videoEl.setAttribute('material', 'opacity', 1);
+                    
+                    // Force play
+                    this.vid.currentTime = 0;
                     this.vid.play().catch(e => {
-                        console.log('Video play failed on marker found:', e);
-                        // Fallback: try to play after a short delay
-                        setTimeout(() => {
-                            this.vid.play().catch(e => console.log('Delayed play failed:', e));
-                        }, 100);
+                        console.log('Video play failed:', e);
                     });
                 }.bind(this));
                 
                 marker.addEventListener('markerLost', function () {
                     this.toggle = false;
-                    this.videoEl.setAttribute('visible', false);
+                    this.videoEl.setAttribute('material', 'opacity', 0);
                     this.vid.pause();
                 }.bind(this));
             },
+            
+            enableAutoplay: function() {
+                this.vid.play().then(() => {
+                    this.vid.pause(); // Immediately pause, but now autoplay is enabled
+                }).catch(e => console.log('Autoplay enable failed:', e));
+            }
         });
     </script>
 </head>
@@ -82,12 +85,12 @@
         >
             <a-video
                 src="#vid"
-                scale="1 0.846 1"
+                scale="1 0.56 1"
                 position="0 0.01 0"
                 rotation="-90 0 0"
                 class="clickable"
                 gesture-handler
-                visible="false"
+                material="transparent: true; opacity: 0"
             ></a-video>
         </a-marker>
         <a-entity camera></a-entity>
